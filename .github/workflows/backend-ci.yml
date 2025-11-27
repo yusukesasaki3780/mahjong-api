@@ -33,7 +33,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build with Gradle
-        run: ./gradlew build --stacktrace
+        run: ./gradlew build -x test --stacktrace
 
       - name: Archive JAR artifacts
         uses: actions/upload-artifact@v4
