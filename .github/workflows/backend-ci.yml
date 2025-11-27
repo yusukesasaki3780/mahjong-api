@@ -1,0 +1,39 @@
+name: Backend CI
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "**/*.kt"
+      - "build.gradle.kts"
+      - "settings.gradle.kts"
+      - ".github/workflows/backend-ci.yml"
+  pull_request:
+
+jobs:
+  build:
+    name: Build Backend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v3
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build with Gradle
+        run: ./gradlew build --stacktrace
+
+      - name: Archive JAR artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: backend-jar
+          path: build/libs/*.jar
