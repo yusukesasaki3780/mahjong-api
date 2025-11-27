@@ -3,13 +3,16 @@ name: Backend CI
 on:
   push:
     branches:
-      - main
+      - master
     paths:
       - "**/*.kt"
       - "build.gradle.kts"
       - "settings.gradle.kts"
       - ".github/workflows/backend-ci.yml"
+
   pull_request:
+    branches:
+      - master
 
 jobs:
   build:
