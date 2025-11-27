@@ -59,26 +59,27 @@ jobs:
           fi
 
           python3 << 'EOF'
-import os
-from pathlib import Path
+          import os
+          from pathlib import Path
 
-template_path = Path("README.template.md")
-output_path = Path("README.md")
+          template_path = Path("README.template.md")
+          output_path = Path("README.md")
 
-template = template_path.read_text(encoding="utf-8")
+          template = template_path.read_text(encoding="utf-8")
 
-replacements = {
-    "{{ date }}": os.getenv("RUN_DATE", ""),
-    "{{ repo_name }}": os.getenv("REPO_NAME", ""),
-    "{{ commit_hash }}": os.getenv("COMMIT_HASH", ""),
-}
+          # プレースホルダー置換
+          replacements = {
+              "{{ date }}": os.getenv("RUN_DATE", ""),
+              "{{ repo_name }}": os.getenv("REPO_NAME", ""),
+              "{{ commit_hash }}": os.getenv("COMMIT_HASH", ""),
+          }
 
-for key, value in replacements.items():
-    template = template.replace(key, value)
+          for key, value in replacements.items():
+              template = template.replace(key, value)
 
-output_path.write_text(template, encoding="utf-8")
-print("README.md generated successfully.")
-EOF
+          output_path.write_text(template, encoding="utf-8")
+          print("README.md generated successfully.")
+          EOF
 
       - name: Commit and push changes
         if: env.RUN_GENERATION != 'skip' && github.ref == 'refs/heads/main'
