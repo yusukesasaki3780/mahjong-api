@@ -52,7 +52,13 @@ internal fun calculateExpectedTotalIncome(
 ): Long {
     val basePlusTip = baseIncome + tipIncome
     return when (gameType) {
-        GameType.YONMA -> basePlusTip - settings.yonmaGameFee
+        GameType.YONMA -> {
+            var expected = basePlusTip
+            if (place == 1) {
+                expected -= settings.yonmaGameFee
+            }
+            expected
+        }
         GameType.SANMA -> {
             var expected = basePlusTip
             if (place == 1) {
