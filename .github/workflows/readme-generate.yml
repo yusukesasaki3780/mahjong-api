@@ -14,30 +14,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      #-----------------------------------------
-      # 1. リポジトリのチェックアウト
-      #-----------------------------------------
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      #-----------------------------------------
-      # 2. 実行すべきか判断
-      #-----------------------------------------
       - name: Decide whether to run
         run: |
           SHOULD_RUN=false
 
-          # 手動実行なら必ず実行
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             SHOULD_RUN=true
-
-          # main へ push なら実行
           elif [ "${{ github.ref }}" = "refs/heads/main" ]; then
             SHOULD_RUN=true
-
-          # テンプレートが更新された場合のみ実行
           elif [ -n "${{ github.event.before }}" ]; then
             if git diff --name-only "${{ github.event.before }}" "${{ github.sha }}" | grep -q 'README.template.md'; then
               SHOULD_RUN=true
@@ -50,16 +39,10 @@ jobs:
             echo "RUN_GENERATION=skip" >> "$GITHUB_ENV"
           fi
 
-      #-----------------------------------------
-      # 3. skip 判定
-      #-----------------------------------------
       - name: Skip generation
         if: env.RUN_GENERATION == 'skip'
-        run: echo "No matching conditions (main push, template update, or manual run). Skipping."
+        run: echo "Skipping README generation."
 
-      #-----------------------------------------
-      # 4. メタデータ準備
-      #-----------------------------------------
       - name: Prepare metadata
         if: env.RUN_GENERATION != 'skip'
         run: |
@@ -67,14 +50,11 @@ jobs:
           echo "REPO_NAME=${GITHUB_REPOSITORY##*/}" >> "$GITHUB_ENV"
           echo "COMMIT_HASH=$(git rev-parse --short HEAD)" >> "$GITHUB_ENV"
 
-      #-----------------------------------------
-      # 5. README 生成処理
-      #-----------------------------------------
       - name: Generate README.md from template
         if: env.RUN_GENERATION != 'skip'
         run: |
           if [ ! -f README.template.md ]; then
-            echo "README.template.md not found. Skipping generation."
+            echo "README.template.md not found. Skipping."
             exit 0
           fi
 
@@ -87,7 +67,6 @@ output_path = Path("README.md")
 
 template = template_path.read_text(encoding="utf-8")
 
-# プレースホルダー置換
 replacements = {
     "{{ date }}": os.getenv("RUN_DATE", ""),
     "{{ repo_name }}": os.getenv("REPO_NAME", ""),
@@ -101,19 +80,17 @@ output_path.write_text(template, encoding="utf-8")
 print("README.md generated successfully.")
 EOF
 
-      #-----------------------------------------
-      # 6. 変更をコミットして main に反映
-      #-----------------------------------------
       - name: Commit and push changes
         if: env.RUN_GENERATION != 'skip' && github.ref == 'refs/heads/main'
         run: |
           if git diff --quiet README.md; then
-            echo "README.md is up to date."
+            echo "README.md unchanged."
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
           git add README.md
-          git commit -m "docs: auto-generate README [skip ci]"
+          git commit -m "docs: auto-update README [skip ci]"
           git push origin HEAD:main
