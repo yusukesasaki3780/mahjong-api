@@ -1,0 +1,59 @@
+*** Update File: src/main/kotlin/com/example/usecase/auth/LoginUserUseCase.kt
+@@
+-    suspend operator fun invoke(command: Command): Result {
+-        val user = userRepository.findById(command.userId)
+-            ?: throw IllegalArgumentException("User not found: ${command.userId}")
+-
+-        val verified = credentialRepository.verifyPassword(command.userId, command.password)
+-        if (!verified) throw IllegalArgumentException("Invalid credentials")
+-
+-        val userId = user.id ?: error("User id missing.")
+-        val now = Clock.System.now()
+-        refreshTokenRepository.deleteExpired(now)
+-        refreshTokenRepository.deleteAllForUser(userId)
+-
+-        val refreshToken = RefreshTokenHelper.generatePlainToken()
+-        val refreshTokenHash = RefreshTokenHelper.hash(refreshToken)
+-        val refreshExpiresAt = now.plusDays(refreshTokenTtlDays)
+-        refreshTokenRepository.create(userId, refreshTokenHash, refreshExpiresAt)
+-
+-        val tokenResult = jwtProvider.generateToken(userId)
+-
+-        return Result(
+-            user = user,
+-            token = tokenResult.token,
+-            refreshToken = refreshToken,
+-            issuedAt = tokenResult.issuedAt
+-        )
+-    }
++    suspend operator fun invoke(command: Command): Result {
++        // 1. ユーザー情報とパスワードを検証する
++        val user = userRepository.findById(command.userId)
++            ?: throw IllegalArgumentException("User not found: ${command.userId}")
++
++        val verified = credentialRepository.verifyPassword(command.userId, command.password)
++        if (!verified) throw IllegalArgumentException("Invalid credentials")
++
++        // 2. 既存のリフレッシュトークンを掃除したうえで新しいものを発行する
++        val userId = user.id ?: error("User id missing.")
++        val now = Clock.System.now()
++        refreshTokenRepository.deleteExpired(now)
++        refreshTokenRepository.deleteAllForUser(userId)
++
++        val refreshToken = RefreshTokenHelper.generatePlainToken()
++        val refreshTokenHash = RefreshTokenHelper.hash(refreshToken)
++        val refreshExpiresAt = now.plusDays(refreshTokenTtlDays)
++        refreshTokenRepository.create(userId, refreshTokenHash, refreshExpiresAt)
++
++        // 3. 新しいアクセス用 JWT を発行し、まとめて返す
++        val tokenResult = jwtProvider.generateToken(userId)
++
++        return Result(
++            user = user,
++            token = tokenResult.token,
++            refreshToken = refreshToken,
++            issuedAt = tokenResult.issuedAt
++        )
++    }
+ }
+*** End Patch

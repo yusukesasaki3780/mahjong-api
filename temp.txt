@@ -1,0 +1,96 @@
+package com.example
+
+import com.example.common.error.DomainValidationException
+import com.example.common.error.ErrorResponse
+import com.example.common.error.FieldError
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.Application
+import io.ktor.server.application.install
+import io.ktor.server.plugins.callloging.CallLogging
+import io.ktor.server.plugins.statuspages.StatusPages
+import io.ktor.server.response.respond
+import org.slf4j.event.Level
+import org.valiktor.ConstraintViolationException
+
+/**
+ * 監視�E例外ハンドリングをまとめて設定する�Eラグイン、E */
+fun Application.configureMonitoring() {
+
+    install(CallLogging) {
+        level = Level.INFO
+    }
+
+    install(StatusPages) {
+        // Valiktor の検証エラーを�E通フォーマットに整形
+        exception<ConstraintViolationException> { call, cause ->
+            val errors = cause.constraintViolations.map { violation ->
+                FieldError(
+                    field = violation.property,
+                    code = violation.constraint.name,
+                    message = violation.constraint.name
+                )
+            }
+            call.respond(
+                HttpStatusCode.BadRequest,
+                ErrorResponse(
+                    errorCode = "VALIDATION_ERROR",
+                    message = "Validation failed",
+                    errors = errors
+                )
+            )
+        }
+
+        // ドメイン専用の検証エラー
+        exception<DomainValidationException> { call, cause ->
+            call.respond(
+                HttpStatusCode.BadRequest,
+                ErrorResponse(
+                    errorCode = "DOMAIN_ERROR",
+                    message = cause.message ?: "Domain validation failed",
+                    errors = cause.violations
+                )
+            )
+        }
+
+        // 認証・認可・存在しなぁE��ソースの統一レスポンス
+        status(HttpStatusCode.Unauthorized) { call, status ->
+            call.respond(
+                status,
+                ErrorResponse(
+                    errorCode = "UNAUTHORIZED",
+                    message = "Authentication required"
+                )
+            )
+        }
+        status(HttpStatusCode.Forbidden) { call, status ->
+            call.respond(
+                status,
+                ErrorResponse(
+                    errorCode = "FORBIDDEN",
+                    message = "Access is forbidden"
+                )
+            )
+        }
+        status(HttpStatusCode.NotFound) { call, status ->
+            call.respond(
+                status,
+                ErrorResponse(
+                    errorCode = "NOT_FOUND",
+                    message = "Resource not found"
+                )
+            )
+        }
+
+        // 想定外�E例外�E 500 としてログに残す
+        exception<Throwable> { call, cause ->
+            call.application.environment.log.error("Unhandled server error", cause)
+            call.respond(
+                HttpStatusCode.InternalServerError,
+                ErrorResponse(
+                    errorCode = "INTERNAL_ERROR",
+                    message = "Unexpected server error"
+                )
+            )
+        }
+    }
+}

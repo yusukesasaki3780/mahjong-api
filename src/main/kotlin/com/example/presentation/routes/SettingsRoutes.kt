@@ -1,0 +1,92 @@
+﻿package com.example.presentation.routes
+
+/**
+ * ### このファイルの役割
+ * - ゲーム設定の取得・更新・部分更新を扱うルート群です。
+ * - JWT から取得したユーザーのみが自身の設定を操作できるように制御しています。
+ */
+
+import com.example.presentation.dto.GameSettingsResponse
+import com.example.presentation.dto.PatchGameSettingsRequest
+import com.example.presentation.dto.UpdateGameSettingsRequest
+import com.example.usecase.settings.GetGameSettingsUseCase
+import com.example.usecase.settings.PatchGameSettingsUseCase
+import com.example.usecase.settings.UpdateGameSettingsUseCase
+import io.ktor.http.HttpStatusCode
+import io.ktor.server.application.call
+import io.ktor.server.request.receive
+import io.ktor.server.response.respond
+import io.ktor.server.routing.Route
+import io.ktor.server.routing.get
+import io.ktor.server.routing.patch
+import io.ktor.server.routing.put
+import io.ktor.server.routing.route
+
+/**
+ * ゲーム設定 API。
+ */
+fun Route.installSettingsRoutes(
+    getGameSettingsUseCase: GetGameSettingsUseCase,
+    updateGameSettingsUseCase: UpdateGameSettingsUseCase,
+    patchGameSettingsUseCase: PatchGameSettingsUseCase
+) {
+    route("/users/{userId}/settings") {
+        get {
+            val userId = call.userIdOrNull() ?: return@get call.respondInvalidUserId()
+            call.requireUserAccess(userId) ?: return@get
+            val settings = getGameSettingsUseCase(userId) ?: return@get call.respond(HttpStatusCode.NotFound)
+            call.respond(GameSettingsResponse.from(settings))
+        }
+
+        put {
+            val userId = call.userIdOrNull() ?: return@put call.respondInvalidUserId()
+            val auditContext = call.requireAuditContext(userId) ?: return@put
+            val request = call.receive<UpdateGameSettingsRequest>()
+            val updated = updateGameSettingsUseCase(
+                UpdateGameSettingsUseCase.Command(
+                    userId = userId,
+                    yonmaGameFee = request.yonmaGameFee,
+                    sanmaGameFee = request.sanmaGameFee,
+                    sanmaGameFeeBack = request.sanmaGameFeeBack,
+                    yonmaTipUnit = request.yonmaTipUnit,
+                    sanmaTipUnit = request.sanmaTipUnit,
+                    wageType = request.wageType,
+                    hourlyWage = request.hourlyWage,
+                    fixedSalary = request.fixedSalary,
+                    nightRateMultiplier = request.nightRateMultiplier,
+                    baseMinWage = request.baseMinWage,
+                    incomeTaxRate = request.incomeTaxRate,
+                    transportPerShift = request.transportPerShift
+                ),
+                auditContext
+            )
+            call.respond(GameSettingsResponse.from(updated))
+        }
+
+        patch {
+            val userId = call.userIdOrNull() ?: return@patch call.respondInvalidUserId()
+            val auditContext = call.requireAuditContext(userId) ?: return@patch
+            val request = call.receive<PatchGameSettingsRequest>()
+            val updated = patchGameSettingsUseCase(
+                PatchGameSettingsUseCase.Command(
+                    userId = userId,
+                    yonmaGameFee = request.yonmaGameFee,
+                    sanmaGameFee = request.sanmaGameFee,
+                    sanmaGameFeeBack = request.sanmaGameFeeBack,
+                    yonmaTipUnit = request.yonmaTipUnit,
+                    sanmaTipUnit = request.sanmaTipUnit,
+                    wageType = request.wageType,
+                    hourlyWage = request.hourlyWage,
+                    fixedSalary = request.fixedSalary,
+                    nightRateMultiplier = request.nightRateMultiplier,
+                    baseMinWage = request.baseMinWage,
+                    incomeTaxRate = request.incomeTaxRate,
+                    transportPerShift = request.transportPerShift
+                ),
+                auditContext
+            )
+            call.respond(GameSettingsResponse.from(updated))
+        }
+    }
+}
+
