@@ -2,12 +2,16 @@ plugins {
     kotlin("jvm") version "2.0.21"
     kotlin("plugin.serialization") version "2.0.21"
     application
+
+    // ★ これを追加（Fat JAR を作る）
+    id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
 group = "com.example"
 version = "0.0.1"
 
 application {
+    // ★ Ktor なら EngineMain が正しい
     mainClass.set("io.ktor.server.netty.EngineMain")
 }
 
@@ -31,7 +35,7 @@ dependencies {
     implementation("io.ktor:ktor-server-content-negotiation:$ktorVersion")
     implementation("io.ktor:ktor-server-host-common:$ktorVersion")
     implementation("io.ktor:ktor-serialization-kotlinx-json:$ktorVersion")
-
+    
     // Exposed / DB
     implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
     implementation("org.jetbrains.exposed:exposed-dao:$exposedVersion")
@@ -51,6 +55,8 @@ dependencies {
     // Logging
     implementation("ch.qos.logback:logback-classic:1.4.11")
 
+    implementation("com.typesafe:config:1.4.3")
+    
     // Test
     testImplementation("io.ktor:ktor-server-test-host:$ktorVersion")
     testImplementation(kotlin("test"))
@@ -64,3 +70,9 @@ dependencies {
 tasks.test {
     useJUnitPlatform()
 }
+tasks.withType<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar> {
+    archiveClassifier.set("all")
+    mergeServiceFiles()
+}
+
+

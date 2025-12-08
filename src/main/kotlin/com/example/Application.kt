@@ -3,75 +3,80 @@
 import com.example.config.JwtConfig
 import com.example.config.JwtProvider
 import com.example.database.DatabaseFactory
-import com.example.infrastructure.db.repository.ExposedAdvancePaymentRepository
-import com.example.infrastructure.db.repository.ExposedAuditRepository
-import com.example.infrastructure.db.repository.ExposedGameResultRepository
-import com.example.infrastructure.db.repository.ExposedGameSettingsRepository
-import com.example.infrastructure.db.repository.ExposedPrefectureRepository
-import com.example.infrastructure.db.repository.ExposedRefreshTokenRepository
-import com.example.infrastructure.db.repository.ExposedShiftRepository
-import com.example.infrastructure.db.repository.ExposedStoreMasterRepository
-import com.example.infrastructure.db.repository.ExposedUserCredentialRepository
-import com.example.infrastructure.db.repository.ExposedUserRepository
+import com.example.infrastructure.db.repository.*
 import com.example.infrastructure.logging.AuditLogger
 import com.example.presentation.routes.RootRoutes
 import com.example.security.LoginAttemptTracker
+import com.example.usecase.*
 import com.example.usecase.advance.GetAdvancePaymentUseCase
 import com.example.usecase.advance.UpsertAdvancePaymentUseCase
 import com.example.usecase.auth.LoginUserUseCase
 import com.example.usecase.auth.RefreshAccessTokenUseCase
 import com.example.usecase.dashboard.GetDashboardSummaryUseCase
-import com.example.usecase.game.DeleteGameResultUseCase
-import com.example.usecase.game.EditGameResultUseCase
-import com.example.usecase.game.GetGameResultUseCase
-import com.example.usecase.game.GetRankingUseCase
-import com.example.usecase.game.GetUserStatsUseCase
-import com.example.usecase.game.PatchGameResultUseCase
-import com.example.usecase.game.RecordGameResultUseCase
+import com.example.usecase.game.*
 import com.example.usecase.prefecture.GetPrefectureListUseCase
 import com.example.usecase.salary.CalculateMonthlySalaryUseCase
-import com.example.usecase.settings.CreateDefaultGameSettingsUseCase
-import com.example.usecase.settings.GetGameSettingsUseCase
-import com.example.usecase.settings.PatchGameSettingsUseCase
-import com.example.usecase.settings.UpdateGameSettingsUseCase
-import com.example.usecase.shift.DeleteShiftUseCase
-import com.example.usecase.shift.EditShiftUseCase
-import com.example.usecase.shift.GetDailyShiftUseCase
-import com.example.usecase.shift.GetMonthlyShiftUseCase
-import com.example.usecase.shift.GetShiftRangeUseCase
-import com.example.usecase.shift.GetShiftStatsUseCase
-import com.example.usecase.shift.PatchShiftUseCase
-import com.example.usecase.shift.RegisterShiftUseCase
+import com.example.usecase.settings.*
+import com.example.usecase.shift.*
 import com.example.usecase.store.GetStoreListUseCase
-import com.example.usecase.user.CreateUserUseCase
-import com.example.usecase.user.DeleteUserUseCase
-import com.example.usecase.user.GetUserUseCase
-import com.example.usecase.user.PatchUserUseCase
-import com.example.usecase.user.UpdateUserUseCase
-import io.ktor.server.application.Application
-import io.ktor.server.application.call
-import io.ktor.server.application.install
-import io.ktor.server.auth.Authentication
-import io.ktor.server.auth.jwt.JWTPrincipal
-import io.ktor.server.auth.jwt.jwt
-import io.ktor.server.response.respondText
-import io.ktor.server.routing.get
-import io.ktor.server.routing.routing
+import com.example.usecase.user.*
+import io.ktor.http.*
+import io.ktor.server.application.*
+import io.ktor.server.auth.*
+import io.ktor.server.auth.jwt.*
+import io.ktor.server.plugins.cors.routing.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
 import kotlinx.datetime.TimeZone
 import kotlinx.serialization.json.Json
 
-/**
- * ### このファイルの役割
- * - Ktor アプリのメインエントリとして、DI・プラグイン設定・ルーティング登録を一括で行います。
- * - Repository と UseCase の依存関係をここで構築し、presentation 層に渡す配線を一本化しています。
- * - DB 初期化や JWT 認証などアプリ全体に影響する設定を Application 起動時にまとめて呼び出します。
- */
 fun Application.module() {
-    initializeDatabase()
+
+    // ===========================================
+    //  DB 初期化
+    // ===========================================
+    DatabaseFactory.init(environment)
 
     val jwtConfig = JwtConfig.from(environment.config)
     val jwtProvider = JwtProvider(jwtConfig)
 
+    // ===========================================
+    //  ★ CORS 設定（CloudFront SPA 対応 完全版）
+    // ===========================================
+    install(CORS) {
+        // 本番 CloudFront ドメインを許可
+        allowHost("app.zooappgames.com", schemes = listOf("https"))
+
+        // ローカル開発の許可（必要なら）
+        allowHost("localhost:5173", schemes = listOf("http"))
+
+        allowCredentials = true
+
+        allowHeader(HttpHeaders.Authorization)
+        allowHeader(HttpHeaders.ContentType)
+        allowHeader(HttpHeaders.Accept)
+        allowHeader(HttpHeaders.AccessControlAllowCredentials)
+        allowHeader(HttpHeaders.AccessControlAllowOrigin)
+        allowHeader(HttpHeaders.Origin)
+        allowHeader(HttpHeaders.UserAgent)
+        allowHeader(HttpHeaders.CacheControl)
+        allowHeader(HttpHeaders.Pragma)
+
+        allowMethod(HttpMethod.Get)
+        allowMethod(HttpMethod.Post)
+        allowMethod(HttpMethod.Put)
+        allowMethod(HttpMethod.Patch)
+        allowMethod(HttpMethod.Delete)
+        allowMethod(HttpMethod.Options)
+
+        // 最終的に必要なら anyHost を残す
+        // ★ フロントの CloudFront に限定するなら OFF 推奨
+        // anyHost() 
+    }
+
+    // ===========================================
+    //  JWT 認証
+    // ===========================================
     install(Authentication) {
         jwt("auth-jwt") {
             realm = jwtConfig.realm
@@ -83,6 +88,9 @@ fun Application.module() {
         }
     }
 
+    // ===========================================
+    //  Repository & UseCase 初期化
+    // ===========================================
     val userRepository = ExposedUserRepository()
     val userCredentialRepository = ExposedUserCredentialRepository()
     val refreshTokenRepository = ExposedRefreshTokenRepository()
@@ -134,6 +142,7 @@ fun Application.module() {
         advancePaymentRepository = advancePaymentRepository,
         timeZone = TimeZone.currentSystemDefault()
     )
+
     val getDashboardSummaryUseCase = GetDashboardSummaryUseCase(
         shiftRepository = shiftRepository,
         calculateMonthlySalaryUseCase = calculateMonthlySalaryUseCase,
@@ -146,43 +155,46 @@ fun Application.module() {
     val getPrefectureListUseCase = GetPrefectureListUseCase(prefectureRepository)
 
     val rootRoutes = RootRoutes(
-        createUserUseCase = createUserUseCase,
-        loginUserUseCase = loginUserUseCase,
-        getUserUseCase = getUserUseCase,
-        updateUserUseCase = updateUserUseCase,
-        patchUserUseCase = patchUserUseCase,
-        deleteUserUseCase = deleteUserUseCase,
-        getGameSettingsUseCase = getGameSettingsUseCase,
-        updateGameSettingsUseCase = updateGameSettingsUseCase,
-        patchGameSettingsUseCase = patchGameSettingsUseCase,
-        recordGameResultUseCase = recordGameResultUseCase,
-        editGameResultUseCase = editGameResultUseCase,
-        patchGameResultUseCase = patchGameResultUseCase,
-        deleteGameResultUseCase = deleteGameResultUseCase,
-        getGameResultUseCase = getGameResultUseCase,
-        getUserStatsUseCase = getUserStatsUseCase,
-        getRankingUseCase = getRankingUseCase,
-        registerShiftUseCase = registerShiftUseCase,
-        editShiftUseCase = editShiftUseCase,
-        patchShiftUseCase = patchShiftUseCase,
-        deleteShiftUseCase = deleteShiftUseCase,
-        getMonthlyShiftUseCase = getMonthlyShiftUseCase,
-        getDailyShiftUseCase = getDailyShiftUseCase,
-        getShiftRangeUseCase = getShiftRangeUseCase,
-        getShiftStatsUseCase = getShiftStatsUseCase,
-        calculateMonthlySalaryUseCase = calculateMonthlySalaryUseCase,
-        getDashboardSummaryUseCase = getDashboardSummaryUseCase,
-        getStoreListUseCase = getStoreListUseCase,
-        getPrefectureListUseCase = getPrefectureListUseCase,
-        loginAttemptTracker = loginAttemptTracker,
-        refreshAccessTokenUseCase = refreshAccessTokenUseCase,
-        accessTokenExpiresInSec = jwtConfig.expiresInSec,
-        getAdvancePaymentUseCase = getAdvancePaymentUseCase,
-        upsertAdvancePaymentUseCase = upsertAdvancePaymentUseCase
+        createUserUseCase,
+        loginUserUseCase,
+        getUserUseCase,
+        updateUserUseCase,
+        patchUserUseCase,
+        deleteUserUseCase,
+        getGameSettingsUseCase,
+        updateGameSettingsUseCase,
+        patchGameSettingsUseCase,
+        recordGameResultUseCase,
+        editGameResultUseCase,
+        patchGameResultUseCase,
+        deleteGameResultUseCase,
+        getGameResultUseCase,
+        getUserStatsUseCase,
+        getRankingUseCase,
+        registerShiftUseCase,
+        editShiftUseCase,
+        patchShiftUseCase,
+        deleteShiftUseCase,
+        getMonthlyShiftUseCase,
+        getDailyShiftUseCase,
+        getShiftRangeUseCase,
+        getShiftStatsUseCase,
+        calculateMonthlySalaryUseCase,
+        getDashboardSummaryUseCase,
+        getStoreListUseCase,
+        getPrefectureListUseCase,
+        loginAttemptTracker,
+        refreshAccessTokenUseCase,
+        jwtConfig.expiresInSec,
+        getAdvancePaymentUseCase,
+        upsertAdvancePaymentUseCase
     )
 
+    // ===========================================
+    //  その他 Ktor 設定
+    // ===========================================
     configureMonitoring()
-    configureHTTP()
+    // configureHTTP()
     configureSerialization()
 
     routing {
@@ -190,13 +202,5 @@ fun Application.module() {
             call.respondText("Mahjong staff API is running")
         }
         with(rootRoutes) { installAll(authName = "auth-jwt") }
-    }
-}
-
-private fun Application.initializeDatabase() {
-    if (environment.config.propertyOrNull("ktor.database.url") != null) {
-        DatabaseFactory.init(environment)
-    } else {
-        environment.log.warn("ktor.database configuration not found. Skipping DatabaseFactory.init for this environment.")
     }
 }
