@@ -29,6 +29,9 @@ import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 
+private val ALL_TIME_START = Instant.parse("1900-01-01T00:00:00Z")
+private val ALL_TIME_END = Instant.parse("3000-01-01T00:00:00Z")
+
 /**
  * ルーティングで共有するヘルパー拡張。
  */
@@ -71,8 +74,13 @@ internal suspend fun ApplicationCall.respondInvalidUserId() {
 }
 
 internal fun ApplicationCall.statsRangeOrNull(): StatsRange? {
-    val startRaw = request.queryParameters["startDate"] ?: request.queryParameters["start"] ?: return null
-    val endRaw = request.queryParameters["endDate"] ?: request.queryParameters["end"] ?: return null
+    val startRaw = request.queryParameters["startDate"] ?: request.queryParameters["start"]
+    val endRaw = request.queryParameters["endDate"] ?: request.queryParameters["end"]
+
+    if (startRaw == null && endRaw == null) {
+        return StatsRange(ALL_TIME_START, ALL_TIME_END)
+    }
+    if (startRaw == null || endRaw == null) return null
 
     val zone = TimeZone.currentSystemDefault()
     val startDate = normalizeToLocalDate(startRaw, zone) ?: return null
