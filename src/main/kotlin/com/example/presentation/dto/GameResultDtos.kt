@@ -20,6 +20,7 @@ data class UpsertGameResultRequest(
     val baseIncome: Long,
     val tipCount: Int,
     val tipIncome: Long,
+    val otherIncome: Long = 0,
     val totalIncome: Long,
     val note: String? = null,
     val createdAt: Instant? = null
@@ -36,6 +37,7 @@ data class PatchGameResultRequest(
     val baseIncome: Long? = null,
     val tipCount: Int? = null,
     val tipIncome: Long? = null,
+    val otherIncome: Long? = null,
     val totalIncome: Long? = null,
     val note: String? = null
 )
@@ -49,6 +51,7 @@ data class GameResultResponse(
     val baseIncome: Long,
     val tipCount: Int,
     val tipIncome: Long,
+    val otherIncome: Long,
     val totalIncome: Long,
     val note: String?
 ) {
@@ -63,11 +66,12 @@ data class GameResultResponse(
                 baseIncome = result.baseIncome,
                 tipCount = result.tipCount,
                 tipIncome = result.tipIncome,
-            totalIncome = result.totalIncome,
-            note = result.note
-        )
+                otherIncome = result.otherIncome,
+                totalIncome = result.totalIncome,
+                note = result.note
+            )
+        }
     }
-}
 }
 
 @Serializable

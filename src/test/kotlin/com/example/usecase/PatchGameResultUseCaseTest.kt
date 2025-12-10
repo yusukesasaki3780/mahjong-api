@@ -37,6 +37,7 @@ class PatchGameResultUseCaseTest {
                 baseIncome = 800,
                 tipCount = 2,
                 tipIncome = 100,
+                otherIncome = 0,
                 totalIncome = 900
             ),
             TestAuditSupport.auditContext
@@ -75,12 +76,13 @@ class PatchGameResultUseCaseTest {
                     userId = 1,
                     resultId = 10,
                     gameType = GameType.YONMA,
-                    place = 2,
-                    baseIncome = 800,
-                    tipCount = 1,
-                    tipIncome = 100,
-                    totalIncome = 900
-                ),
+                place = 2,
+                baseIncome = 800,
+                tipCount = 1,
+                tipIncome = 100,
+                otherIncome = 0,
+                totalIncome = 950
+            ),
                 TestAuditSupport.auditContext
             )
         }

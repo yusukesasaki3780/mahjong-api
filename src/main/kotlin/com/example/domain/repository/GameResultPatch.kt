@@ -13,6 +13,7 @@ data class GameResultPatch(
     val baseIncome: Long? = null,
     val tipCount: Int? = null,
     val tipIncome: Long? = null,
+    val otherIncome: Long? = null,
     val totalIncome: Long? = null,
     val note: String? = null,
     val updatedAt: Instant? = null

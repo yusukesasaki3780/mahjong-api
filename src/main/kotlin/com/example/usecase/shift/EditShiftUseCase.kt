@@ -12,6 +12,7 @@ import com.example.domain.model.AuditContext
 import com.example.domain.model.Shift
 import com.example.domain.model.ShiftBreak
 import com.example.domain.repository.ShiftRepository
+import com.example.domain.repository.SpecialHourlyWageRepository
 import com.example.infrastructure.logging.AuditLogger
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
@@ -21,6 +22,7 @@ import org.valiktor.validate
 
 class EditShiftUseCase(
     private val repository: ShiftRepository,
+    private val specialHourlyWageRepository: SpecialHourlyWageRepository,
     private val auditLogger: AuditLogger
 ) {
 
@@ -32,7 +34,8 @@ class EditShiftUseCase(
         val endTime: Instant,
         val memo: String?,
         val breaks: List<BreakCommand>,
-        val createdAt: Instant
+        val createdAt: Instant,
+        val specialHourlyWageId: Long? = null
     )
 
     data class BreakCommand(
@@ -46,6 +49,8 @@ class EditShiftUseCase(
         val before = repository.findById(command.shiftId)
             ?: throw IllegalArgumentException("Shift not found: ${command.shiftId}")
 
+        val specialWage = command.specialHourlyWageId?.let { requireSpecialWage(command.userId, it) }
+
         val shift = Shift(
             id = command.shiftId,
             userId = command.userId,
@@ -53,6 +58,7 @@ class EditShiftUseCase(
             startTime = command.startTime,
             endTime = command.endTime,
             memo = command.memo,
+            specialHourlyWage = specialWage,
             breaks = command.breaks.map {
                 ShiftBreak(
                     id = null,
@@ -136,5 +142,17 @@ class EditShiftUseCase(
             throw DomainValidationException(violations)
         }
     }
+
+    private suspend fun requireSpecialWage(userId: Long, specialWageId: Long) =
+        specialHourlyWageRepository.findById(specialWageId)?.takeIf { it.userId == userId }
+            ?: throw DomainValidationException(
+                listOf(
+                    FieldError(
+                        field = "specialHourlyWageId",
+                        code = "INVALID_SPECIAL_WAGE",
+                        message = "特別時給が見つからないか、他のユーザーのものです"
+                    )
+                )
+            )
 }
 

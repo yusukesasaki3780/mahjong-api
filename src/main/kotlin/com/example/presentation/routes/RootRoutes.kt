@@ -24,6 +24,9 @@ import com.example.usecase.salary.CalculateMonthlySalaryUseCase
 import com.example.usecase.settings.GetGameSettingsUseCase
 import com.example.usecase.settings.PatchGameSettingsUseCase
 import com.example.usecase.settings.UpdateGameSettingsUseCase
+import com.example.usecase.settings.CreateSpecialHourlyWageUseCase
+import com.example.usecase.settings.DeleteSpecialHourlyWageUseCase
+import com.example.usecase.settings.ListSpecialHourlyWagesUseCase
 import com.example.usecase.shift.DeleteShiftUseCase
 import com.example.usecase.shift.EditShiftUseCase
 import com.example.usecase.shift.GetDailyShiftUseCase
@@ -54,6 +57,9 @@ class RootRoutes(
     private val getGameSettingsUseCase: GetGameSettingsUseCase,
     private val updateGameSettingsUseCase: UpdateGameSettingsUseCase,
     private val patchGameSettingsUseCase: PatchGameSettingsUseCase,
+    private val listSpecialHourlyWagesUseCase: ListSpecialHourlyWagesUseCase,
+    private val createSpecialHourlyWageUseCase: CreateSpecialHourlyWageUseCase,
+    private val deleteSpecialHourlyWageUseCase: DeleteSpecialHourlyWageUseCase,
     private val recordGameResultUseCase: RecordGameResultUseCase,
     private val editGameResultUseCase: EditGameResultUseCase,
     private val patchGameResultUseCase: PatchGameResultUseCase,
@@ -103,7 +109,10 @@ class RootRoutes(
             installSettingsRoutes(
                 getGameSettingsUseCase = getGameSettingsUseCase,
                 updateGameSettingsUseCase = updateGameSettingsUseCase,
-                patchGameSettingsUseCase = patchGameSettingsUseCase
+                patchGameSettingsUseCase = patchGameSettingsUseCase,
+                listSpecialHourlyWagesUseCase = listSpecialHourlyWagesUseCase,
+                createSpecialHourlyWageUseCase = createSpecialHourlyWageUseCase,
+                deleteSpecialHourlyWageUseCase = deleteSpecialHourlyWageUseCase
             )
             installGameResultRoutes(
                 recordGameResultUseCase = recordGameResultUseCase,

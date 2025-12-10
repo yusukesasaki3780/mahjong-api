@@ -25,6 +25,8 @@ class SalaryRoutesTest : RoutesTestBase() {
                 totalNightMinutes = 600,
                 baseWageTotal = 180000.0,
                 nightExtraTotal = 20000.0,
+                specialAllowanceTotal = 0.0,
+                specialAllowances = emptyList(),
                 gameIncomeTotal = 1000,
                 transportTotal = 500,
                 advanceAmount = 2500.0,

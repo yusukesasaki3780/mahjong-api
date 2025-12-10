@@ -11,6 +11,7 @@ import com.example.common.error.FieldError
 import com.example.domain.model.Shift
 import com.example.domain.model.ShiftBreak
 import com.example.domain.repository.ShiftRepository
+import com.example.domain.repository.SpecialHourlyWageRepository
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
@@ -21,7 +22,8 @@ import org.valiktor.validate
  * シフト登録ユースケース。
  */
 class RegisterShiftUseCase(
-    private val repository: ShiftRepository
+    private val repository: ShiftRepository,
+    private val specialHourlyWageRepository: SpecialHourlyWageRepository
 ) {
 
     data class Command(
@@ -30,7 +32,8 @@ class RegisterShiftUseCase(
         val startTime: Instant,
         val endTime: Instant,
         val memo: String?,
-        val breaks: List<BreakCommand>
+        val breaks: List<BreakCommand>,
+        val specialHourlyWageId: Long? = null
     )
 
     data class BreakCommand(
@@ -41,6 +44,7 @@ class RegisterShiftUseCase(
     suspend operator fun invoke(command: Command): Shift {
         command.validate()
         val now = Clock.System.now()
+        val specialWage = command.specialHourlyWageId?.let { requireSpecialWage(command.userId, it) }
         val shift = Shift(
             id = null,
             userId = command.userId,
@@ -48,6 +52,7 @@ class RegisterShiftUseCase(
             startTime = command.startTime,
             endTime = command.endTime,
             memo = command.memo,
+            specialHourlyWage = specialWage,
             breaks = command.breaks.map {
                 ShiftBreak(
                     id = null,
@@ -148,5 +153,17 @@ class RegisterShiftUseCase(
 
     private fun overlap(aStart: Instant, aEnd: Instant, bStart: Instant, bEnd: Instant): Boolean =
         bStart < aEnd && aStart < bEnd
+
+    private suspend fun requireSpecialWage(userId: Long, specialWageId: Long) =
+        specialHourlyWageRepository.findById(specialWageId)?.takeIf { it.userId == userId }
+            ?: throw DomainValidationException(
+                listOf(
+                    FieldError(
+                        field = "specialHourlyWageId",
+                        code = "INVALID_SPECIAL_WAGE",
+                        message = "特別時給が見つからないか、他のユーザーのものです。"
+                    )
+                )
+            )
 }
 

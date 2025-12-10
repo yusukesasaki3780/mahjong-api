@@ -118,7 +118,8 @@ fun Route.installShiftRoutes(
                             breakStart = it.first,
                             breakEnd = it.second
                         )
-                    }
+                    },
+                    specialHourlyWageId = request.specialHourlyWageId
                 )
             )
             call.respond(HttpStatusCode.Created, ShiftResponse.from(created))
@@ -148,7 +149,8 @@ fun Route.installShiftRoutes(
                             breakEnd = it.second
                         )
                     },
-                    createdAt = request.createdAt ?: shiftTimes.start
+                    createdAt = request.createdAt ?: shiftTimes.start,
+                    specialHourlyWageId = request.specialHourlyWageId
                 ),
                 auditContext
             )
@@ -206,7 +208,9 @@ fun Route.installShiftRoutes(
                     startTime = shiftTimes?.start,
                     endTime = shiftTimes?.end,
                     memo = request.memo,
-                    breaks = breakCommands
+                    breaks = breakCommands,
+                    specialHourlyWageId = request.specialHourlyWageId,
+                    clearSpecialHourlyWage = request.clearSpecialHourlyWage == true
                 ),
                 auditContext
             )

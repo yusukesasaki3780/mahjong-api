@@ -18,7 +18,10 @@ import com.example.usecase.game.PatchGameResultUseCase
 import com.example.usecase.game.RecordGameResultUseCase
 import com.example.usecase.prefecture.GetPrefectureListUseCase
 import com.example.usecase.salary.CalculateMonthlySalaryUseCase
+import com.example.usecase.settings.CreateSpecialHourlyWageUseCase
+import com.example.usecase.settings.DeleteSpecialHourlyWageUseCase
 import com.example.usecase.settings.GetGameSettingsUseCase
+import com.example.usecase.settings.ListSpecialHourlyWagesUseCase
 import com.example.usecase.settings.PatchGameSettingsUseCase
 import com.example.usecase.settings.UpdateGameSettingsUseCase
 import com.example.usecase.shift.DeleteShiftUseCase
@@ -78,6 +81,9 @@ abstract class RoutesTestBase {
     protected val getGameSettingsUseCase: GetGameSettingsUseCase = mockk(relaxed = true)
     protected val updateGameSettingsUseCase: UpdateGameSettingsUseCase = mockk(relaxed = true)
     protected val patchGameSettingsUseCase: PatchGameSettingsUseCase = mockk(relaxed = true)
+    protected val listSpecialHourlyWagesUseCase: ListSpecialHourlyWagesUseCase = mockk(relaxed = true)
+    protected val createSpecialHourlyWageUseCase: CreateSpecialHourlyWageUseCase = mockk(relaxed = true)
+    protected val deleteSpecialHourlyWageUseCase: DeleteSpecialHourlyWageUseCase = mockk(relaxed = true)
 
     protected val recordGameResultUseCase: RecordGameResultUseCase = mockk(relaxed = true)
     protected val editGameResultUseCase: EditGameResultUseCase = mockk(relaxed = true)
@@ -135,6 +141,9 @@ abstract class RoutesTestBase {
                 getGameSettingsUseCase = getGameSettingsUseCase,
                 updateGameSettingsUseCase = updateGameSettingsUseCase,
                 patchGameSettingsUseCase = patchGameSettingsUseCase,
+                listSpecialHourlyWagesUseCase = listSpecialHourlyWagesUseCase,
+                createSpecialHourlyWageUseCase = createSpecialHourlyWageUseCase,
+                deleteSpecialHourlyWageUseCase = deleteSpecialHourlyWageUseCase,
                 recordGameResultUseCase = recordGameResultUseCase,
                 editGameResultUseCase = editGameResultUseCase,
                 patchGameResultUseCase = patchGameResultUseCase,

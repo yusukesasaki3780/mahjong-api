@@ -4,6 +4,7 @@ import com.example.common.error.DomainValidationException
 import com.example.domain.model.Shift
 import com.example.domain.model.ShiftBreak
 import com.example.domain.repository.ShiftRepository
+import com.example.domain.repository.SpecialHourlyWageRepository
 import com.example.usecase.shift.RegisterShiftUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -18,7 +19,8 @@ import kotlin.test.assertFailsWith
 class RegisterShiftUseCaseTest {
 
     private val repository = mockk<ShiftRepository>()
-    private val useCase = RegisterShiftUseCase(repository)
+    private val specialRepository = mockk<SpecialHourlyWageRepository>(relaxed = true)
+    private val useCase = RegisterShiftUseCase(repository, specialRepository)
 
     private val start = Instant.parse("2025-01-01T09:00:00Z")
     private val end = Instant.parse("2025-01-01T18:00:00Z")

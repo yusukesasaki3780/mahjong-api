@@ -32,6 +32,7 @@ class ExposedGameResultRepositoryIntegrationTest : RepositoryTestBase() {
                 baseIncome = 1000,
                 tipCount = 2,
                 tipIncome = 200,
+                otherIncome = 0,
                 totalIncome = 1200,
                 createdAt = now,
                 updatedAt = now
@@ -66,6 +67,7 @@ class ExposedGameResultRepositoryIntegrationTest : RepositoryTestBase() {
                 baseIncome = 800,
                 tipCount = 1,
                 tipIncome = 100,
+                otherIncome = 0,
                 totalIncome = 900,
                 createdAt = now,
                 updatedAt = now

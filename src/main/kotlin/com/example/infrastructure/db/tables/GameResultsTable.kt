@@ -21,6 +21,7 @@ object GameResultsTable : Table("game_results") {
     val baseIncome = integer("base_income")
     val tipCount = integer("tip_count")
     val tipIncome = integer("tip_income")
+    val otherIncome = integer("other_income").default(0)
     val totalIncome = integer("total_income")
     val note = text("note").nullable()
     val createdAt = timestamp("created_at")

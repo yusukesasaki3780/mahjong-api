@@ -104,11 +104,12 @@ class ExposedUserRepository : UserRepository {
     override suspend fun findRanking(gameType: GameType, period: StatsPeriod): List<RankingEntry> = dbQuery {
         val baseSum = GameResultsTable.baseIncome.sum()
         val tipSum = GameResultsTable.tipIncome.sum()
+        val otherSum = GameResultsTable.otherIncome.sum()
         val gameCount = GameResultsTable.id.count()
         val avgPlace = GameResultsTable.place.avg()
 
         (UsersTable innerJoin GameResultsTable)
-            .slice(listOf(UsersTable.userId, UsersTable.name, UsersTable.nickname, baseSum, tipSum, gameCount, avgPlace))
+            .slice(listOf(UsersTable.userId, UsersTable.name, UsersTable.nickname, baseSum, tipSum, otherSum, gameCount, avgPlace))
             .select {
                 (GameResultsTable.gameType eq gameType.name) and
                     (GameResultsTable.playedAt greaterEq period.start) and
@@ -121,7 +122,9 @@ class ExposedUserRepository : UserRepository {
                 RankingEntry(
                     userId = row[UsersTable.userId],
                     name = displayName,
-                    totalIncome = (row[baseSum]?.toLong() ?: 0L) + (row[tipSum]?.toLong() ?: 0L),
+                    totalIncome = (row[baseSum]?.toLong() ?: 0L) +
+                        (row[tipSum]?.toLong() ?: 0L) +
+                        (row[otherSum]?.toLong() ?: 0L),
                     gameCount = row[gameCount]?.toInt() ?: 0,
                     averagePlace = row[avgPlace]?.toDouble()
                 )

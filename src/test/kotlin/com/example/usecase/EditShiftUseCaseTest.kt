@@ -4,6 +4,7 @@ import com.example.common.error.DomainValidationException
 import com.example.domain.model.Shift
 import com.example.domain.model.ShiftBreak
 import com.example.domain.repository.ShiftRepository
+import com.example.domain.repository.SpecialHourlyWageRepository
 import com.example.usecase.shift.EditShiftUseCase
 import com.example.usecase.TestAuditSupport
 import io.mockk.coEvery
@@ -20,7 +21,8 @@ import org.valiktor.ConstraintViolationException
 class EditShiftUseCaseTest {
 
     private val repository = mockk<ShiftRepository>()
-    private val useCase = EditShiftUseCase(repository, TestAuditSupport.auditLogger)
+    private val specialRepository = mockk<SpecialHourlyWageRepository>(relaxed = true)
+    private val useCase = EditShiftUseCase(repository, specialRepository, TestAuditSupport.auditLogger)
 
     private val start = Instant.parse("2025-01-01T09:00:00Z")
     private val end = Instant.parse("2025-01-01T18:00:00Z")

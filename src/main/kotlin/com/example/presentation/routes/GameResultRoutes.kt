@@ -91,6 +91,7 @@ fun Route.installGameResultRoutes(
                     baseIncome = request.baseIncome,
                     tipCount = request.tipCount,
                     tipIncome = request.tipIncome,
+                    otherIncome = request.otherIncome,
                     totalIncome = request.totalIncome,
                     note = request.note
                 )
@@ -116,6 +117,7 @@ fun Route.installGameResultRoutes(
                     baseIncome = request.baseIncome,
                     tipCount = request.tipCount,
                     tipIncome = request.tipIncome,
+                    otherIncome = request.otherIncome,
                     totalIncome = request.totalIncome,
                     note = request.note,
                     createdAt = request.createdAt ?: request.playedAt.atStartOfDayIn(zone)
@@ -142,6 +144,7 @@ fun Route.installGameResultRoutes(
                     baseIncome = request.baseIncome,
                     tipCount = request.tipCount,
                     tipIncome = request.tipIncome,
+                    otherIncome = request.otherIncome,
                     totalIncome = request.totalIncome,
                     note = request.note
                 ),

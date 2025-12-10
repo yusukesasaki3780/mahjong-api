@@ -34,6 +34,7 @@ class ExposedGameResultRepository : GameResultRepository {
             row[baseIncome] = result.baseIncome.toInt()
             row[tipCount] = result.tipCount
             row[tipIncome] = result.tipIncome.toInt()
+            row[otherIncome] = result.otherIncome.toInt()
             row[totalIncome] = result.totalIncome.toInt()
             row[note] = result.note
             row[createdAt] = result.createdAt
@@ -53,6 +54,7 @@ class ExposedGameResultRepository : GameResultRepository {
             row[baseIncome] = result.baseIncome.toInt()
             row[tipCount] = result.tipCount
             row[tipIncome] = result.tipIncome.toInt()
+            row[otherIncome] = result.otherIncome.toInt()
             row[totalIncome] = result.totalIncome.toInt()
             row[note] = result.note
             row[createdAt] = result.createdAt
@@ -72,6 +74,7 @@ class ExposedGameResultRepository : GameResultRepository {
             patch.baseIncome?.let { row[baseIncome] = it.toInt() }
             patch.tipCount?.let { row[tipCount] = it }
             patch.tipIncome?.let { row[tipIncome] = it.toInt() }
+            patch.otherIncome?.let { row[otherIncome] = it.toInt() }
             patch.totalIncome?.let { row[totalIncome] = it.toInt() }
             patch.note?.let { row[note] = it }
             patch.updatedAt?.let { row[updatedAt] = it }
@@ -151,6 +154,7 @@ class ExposedGameResultRepository : GameResultRepository {
             baseIncome = row[GameResultsTable.baseIncome].toLong(),
             tipCount = row[GameResultsTable.tipCount],
             tipIncome = row[GameResultsTable.tipIncome].toLong(),
+            otherIncome = row[GameResultsTable.otherIncome].toLong(),
             totalIncome = row[GameResultsTable.totalIncome].toLong(),
             note = row[GameResultsTable.note],
             createdAt = row[GameResultsTable.createdAt],

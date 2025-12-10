@@ -57,6 +57,7 @@ object TestFixtures {
         baseIncome = 1000,
         tipCount = 1,
         tipIncome = 100,
+        otherIncome = 0,
         totalIncome = 1100,
         note = "memo",
         createdAt = now,

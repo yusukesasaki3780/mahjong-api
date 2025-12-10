@@ -38,6 +38,7 @@ class EditGameResultUseCaseTest {
             baseIncome = 800,
             tipCount = 2,
             tipIncome = 100,
+            otherIncome = 0,
             totalIncome = 900,
             createdAt = Clock.System.now()
         )
@@ -64,6 +65,7 @@ class EditGameResultUseCaseTest {
             baseIncome = 800,
             tipCount = 2,
             tipIncome = 50,
+            otherIncome = 0,
             totalIncome = 850,
             createdAt = Clock.System.now()
         )
@@ -88,7 +90,8 @@ class EditGameResultUseCaseTest {
             baseIncome = 800,
             tipCount = 1,
             tipIncome = 100,
-            totalIncome = 900,
+            otherIncome = 0,
+            totalIncome = 950,
             createdAt = Clock.System.now()
         )
 

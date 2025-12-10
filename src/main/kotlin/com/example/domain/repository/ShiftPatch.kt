@@ -11,6 +11,8 @@ data class ShiftPatch(
     val startTime: Instant? = null,
     val endTime: Instant? = null,
     val memo: String? = null,
+    val specialHourlyWageId: Long? = null,
+    val specialHourlyWageIdSet: Boolean = false,
     val updatedAt: Instant? = null,
     val breakPatches: List<ShiftBreakPatch>? = null
 )

@@ -50,6 +50,7 @@ object ValidationMessageResolver {
         "transportPerShift" to "交通費",
         "tipCount" to "チップ枚数",
         "tipIncome" to "チップ収入",
+        "otherIncome" to "その他収入",
         "totalIncome" to "総収入",
         "place" to "着順",
         "playedAt" to "対局日",
@@ -151,4 +152,3 @@ object ValidationMessageResolver {
         return fieldLabels[key] ?: key ?: "この項目"
     }
 }
-

@@ -16,6 +16,7 @@ data class GameResult(
     val baseIncome: Long,
     val tipCount: Int,
     val tipIncome: Long,
+    val otherIncome: Long,
     val totalIncome: Long,
     val note: String? = null,
     val createdAt: Instant,

@@ -37,6 +37,7 @@ class RecordGameResultUseCase(
         val baseIncome: Long,
         val tipCount: Int,
         val tipIncome: Long,
+        val otherIncome: Long = 0,
         val totalIncome: Long,
         val note: String? = null
     )
@@ -61,6 +62,7 @@ class RecordGameResultUseCase(
             gameType = command.gameType,
             baseIncome = command.baseIncome,
             tipIncome = command.tipIncome,
+            otherIncome = command.otherIncome,
             place = command.place,
             settings = settings
         )
@@ -74,6 +76,7 @@ class RecordGameResultUseCase(
             baseIncome = command.baseIncome,
             tipCount = command.tipCount,
             tipIncome = command.tipIncome,
+            otherIncome = command.otherIncome,
             totalIncome = command.totalIncome,
             note = command.note,
             createdAt = now,

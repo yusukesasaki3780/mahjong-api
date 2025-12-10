@@ -30,6 +30,9 @@ object ShiftTimeCalculator {
         val totalMinutes: Long get() = dayMinutes + nightMinutes
     }
 
+    fun calculateMinutesForShift(shift: Shift, timeZone: TimeZone): Minutes =
+        calculateMinutes(listOf(shift), timeZone)
+
     fun calculateMinutes(shifts: List<Shift>, timeZone: TimeZone): Minutes {
         var daySeconds = 0L
         var nightSeconds = 0L

@@ -47,10 +47,11 @@ internal fun calculateExpectedTotalIncome(
     gameType: GameType,
     baseIncome: Long,
     tipIncome: Long,
+    otherIncome: Long,
     place: Int,
     settings: ResolvedGameSettings
 ): Long {
-    val basePlusTip = baseIncome + tipIncome
+    val basePlusTip = baseIncome + tipIncome + otherIncome
     return when (gameType) {
         GameType.YONMA -> {
             var expected = basePlusTip
@@ -74,10 +75,11 @@ internal fun ensureTotalIncomeMatches(
     gameType: GameType,
     baseIncome: Long,
     tipIncome: Long,
+    otherIncome: Long,
     place: Int,
     settings: ResolvedGameSettings
 ) {
-    val expected = calculateExpectedTotalIncome(gameType, baseIncome, tipIncome, place, settings)
+    val expected = calculateExpectedTotalIncome(gameType, baseIncome, tipIncome, otherIncome, place, settings)
     if (totalIncome != expected) {
         throw DomainValidationException(
             listOf(
@@ -90,4 +92,3 @@ internal fun ensureTotalIncomeMatches(
         )
     }
 }
-

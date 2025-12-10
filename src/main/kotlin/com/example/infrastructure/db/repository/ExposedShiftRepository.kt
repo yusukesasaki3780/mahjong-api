@@ -2,20 +2,24 @@ package com.example.infrastructure.db.repository
 
 import com.example.domain.model.Shift
 import com.example.domain.model.ShiftBreak
+import com.example.domain.model.SpecialHourlyWage
 import com.example.domain.repository.ShiftBreakPatch
 import com.example.domain.repository.ShiftPatch
 import com.example.domain.repository.ShiftRepository
 import com.example.infrastructure.db.tables.ShiftBreaksTable
+import com.example.infrastructure.db.tables.ShiftSpecialAllowancesTable
 import com.example.infrastructure.db.tables.ShiftsTable
+import com.example.infrastructure.db.tables.SpecialHourlyWagesTable
 import kotlinx.coroutines.Dispatchers
+import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.greaterEq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.lessEq
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
@@ -39,6 +43,7 @@ class ExposedShiftRepository : ShiftRepository {
         } get ShiftsTable.id
 
         upsertBreaks(shiftId, shift.breaks)
+        upsertSpecialAllowance(shiftId, shift.specialHourlyWageId)
 
         fetchShift(shiftId)
     }
@@ -57,6 +62,7 @@ class ExposedShiftRepository : ShiftRepository {
 
         ShiftBreaksTable.deleteWhere { ShiftBreaksTable.shiftId eq targetId }
         upsertBreaks(targetId, shift.breaks)
+        upsertSpecialAllowance(targetId, shift.specialHourlyWageId)
 
         fetchShift(targetId)
     }
@@ -103,6 +109,10 @@ class ExposedShiftRepository : ShiftRepository {
             }
         }
 
+        if (patch.specialHourlyWageIdSet) {
+            upsertSpecialAllowance(shiftId, patch.specialHourlyWageId)
+        }
+
         patch.breakPatches?.forEach { brPatch ->
             handleBreakPatch(shiftId, brPatch)
         }
@@ -111,16 +121,19 @@ class ExposedShiftRepository : ShiftRepository {
     }
 
     private fun loadShiftsInRange(userId: Long, start: LocalDate, end: LocalDate): List<Shift> {
-        val shifts = ShiftsTable
+        val rows = ShiftsTable
             .select {
                 (ShiftsTable.userId eq userId) and
                     (ShiftsTable.workDate greaterEq start) and
                     (ShiftsTable.workDate lessEq end)
             }
-            .map(::toShift)
+            .toList()
 
-        val breakMap = fetchBreaksByShiftIds(shifts.mapNotNull { it.id })
-        return shifts.map { shift ->
+        val specialAssignments = fetchSpecialAssignments(rows.map { it[ShiftsTable.id] })
+        val breakMap = fetchBreaksByShiftIds(rows.map { it[ShiftsTable.id] })
+        return rows.map { row ->
+            val assignment = specialAssignments[row[ShiftsTable.id]]
+            val shift = toShift(row, assignment?.special, assignment?.specialId)
             shift.copy(breaks = breakMap[shift.id] ?: emptyList())
         }
     }
@@ -129,11 +142,12 @@ class ExposedShiftRepository : ShiftRepository {
         fetchShiftOrNull(id) ?: error("Shift not found: $id")
 
     private fun fetchShiftOrNull(id: Long): Shift? {
-        val shift = ShiftsTable
+        val row = ShiftsTable
             .select { ShiftsTable.id eq id }
-            .map(::toShift)
             .singleOrNull()
             ?: return null
+        val assignment = fetchSpecialAssignments(listOf(id))[id]
+        val shift = toShift(row, assignment?.special, assignment?.specialId)
         val breaks = fetchBreaksByShiftIds(listOf(id))[id].orEmpty()
         return shift.copy(breaks = breaks)
     }
@@ -198,7 +212,7 @@ class ExposedShiftRepository : ShiftRepository {
                 .groupBy { it.shiftId ?: error("shiftId is null in break record.") }
         }
 
-    private fun toShift(row: ResultRow): Shift =
+    private fun toShift(row: ResultRow, special: SpecialHourlyWage?, specialId: Long?): Shift =
         Shift(
             id = row[ShiftsTable.id],
             userId = row[ShiftsTable.userId],
@@ -206,9 +220,52 @@ class ExposedShiftRepository : ShiftRepository {
             startTime = row[ShiftsTable.startTime],
             endTime = row[ShiftsTable.endTime],
             memo = row[ShiftsTable.memo],
+            specialHourlyWage = special,
+            specialHourlyWageId = specialId ?: special?.id,
             createdAt = row[ShiftsTable.createdAt],
             updatedAt = row[ShiftsTable.updatedAt]
         )
+
+    private fun fetchSpecialAssignments(ids: List<Long>): Map<Long, SpecialAssignment> {
+        if (ids.isEmpty()) return emptyMap()
+        val allowances = ShiftSpecialAllowancesTable
+            .select { ShiftSpecialAllowancesTable.shiftId inList ids }
+            .associate { row ->
+                row[ShiftSpecialAllowancesTable.shiftId] to row[ShiftSpecialAllowancesTable.specialHourlyWageId]
+            }
+        if (allowances.isEmpty()) return emptyMap()
+        val specialIds = allowances.values.filterNotNull()
+        val specials = if (specialIds.isEmpty()) {
+            emptyMap()
+        } else {
+            SpecialHourlyWagesTable
+                .select { SpecialHourlyWagesTable.id inList specialIds }
+                .associate { row ->
+                    row[SpecialHourlyWagesTable.id] to row.toSpecialHourlyWage()
+                }
+        }
+        return allowances.mapValues { (_, specialId) ->
+            SpecialAssignment(
+                specialId = specialId,
+                special = specialId?.let { specials[it] }
+            )
+        }
+    }
+
+    private fun ResultRow.toSpecialHourlyWage(): SpecialHourlyWage =
+        SpecialHourlyWage(
+            id = this[SpecialHourlyWagesTable.id],
+            userId = this[SpecialHourlyWagesTable.userId],
+            label = this[SpecialHourlyWagesTable.label],
+            hourlyWage = this[SpecialHourlyWagesTable.hourlyWage],
+            createdAt = this[SpecialHourlyWagesTable.createdAt],
+            updatedAt = this[SpecialHourlyWagesTable.updatedAt]
+        )
+
+    private data class SpecialAssignment(
+        val specialId: Long?,
+        val special: SpecialHourlyWage?
+    )
 
     private fun toShiftBreak(row: ResultRow): ShiftBreak =
         ShiftBreak(
@@ -217,6 +274,19 @@ class ExposedShiftRepository : ShiftRepository {
             breakStart = row[ShiftBreaksTable.breakStart],
             breakEnd = row[ShiftBreaksTable.breakEnd]
         )
+
+    private fun upsertSpecialAllowance(shiftId: Long, specialId: Long?) {
+        ShiftSpecialAllowancesTable.deleteWhere { ShiftSpecialAllowancesTable.shiftId eq shiftId }
+        if (specialId != null) {
+            val now = Clock.System.now()
+            ShiftSpecialAllowancesTable.insert { row ->
+                row[ShiftSpecialAllowancesTable.shiftId] = shiftId
+                row[ShiftSpecialAllowancesTable.specialHourlyWageId] = specialId
+                row[ShiftSpecialAllowancesTable.createdAt] = now
+                row[ShiftSpecialAllowancesTable.updatedAt] = now
+            }
+        }
+    }
 
     private suspend fun <T> dbQuery(block: suspend () -> T): T =
         newSuspendedTransaction(Dispatchers.IO) { block() }

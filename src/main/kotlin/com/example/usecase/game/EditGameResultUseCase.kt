@@ -41,6 +41,7 @@ class EditGameResultUseCase(
         val baseIncome: Long,
         val tipCount: Int,
         val tipIncome: Long,
+        val otherIncome: Long,
         val totalIncome: Long,
         val note: String? = null,
         val createdAt: Instant
@@ -69,6 +70,7 @@ class EditGameResultUseCase(
             gameType = command.gameType,
             baseIncome = command.baseIncome,
             tipIncome = command.tipIncome,
+            otherIncome = command.otherIncome,
             place = command.place,
             settings = settings
         )
@@ -82,6 +84,7 @@ class EditGameResultUseCase(
             baseIncome = command.baseIncome,
             tipCount = command.tipCount,
             tipIncome = command.tipIncome,
+            otherIncome = command.otherIncome,
             totalIncome = command.totalIncome,
             note = command.note,
             createdAt = command.createdAt,

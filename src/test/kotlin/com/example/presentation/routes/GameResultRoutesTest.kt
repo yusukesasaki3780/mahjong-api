@@ -3,7 +3,6 @@
 import com.example.TestFixtures
 import com.example.presentation.dto.PatchGameResultRequest
 import com.example.presentation.dto.UpsertGameResultRequest
-import com.example.presentation.dto.ValidationMessagesResponse
 import com.example.common.error.ErrorResponse
 import com.example.usecase.game.DeleteGameResultUseCase
 import com.example.usecase.game.EditGameResultUseCase
@@ -76,16 +75,13 @@ class GameResultRoutesTest : RoutesTestBase() {
     }
 
     @Test
-    fun `missing range returns 400`() = testApplication {
+    fun `missing range defaults to all time`() = testApplication {
+        coEvery { getUserStatsUseCase(any<GetUserStatsUseCase.Command>()) } returns TestFixtures.userStats()
         installRoutes()
         val response = client.get("/users/1/results") {
             withAuth(userId = 1)
         }
-        assertEquals(HttpStatusCode.BadRequest, response.status)
-        val error = json.decodeFromString<ValidationMessagesResponse>(response.bodyAsText())
-        assertEquals(2, error.errors.size)
-        val fields = error.errors.mapNotNull { it.field }.toSet()
-        assertEquals(setOf("start", "end"), fields)
+        assertEquals(HttpStatusCode.OK, response.status)
     }
 
     @Test
@@ -99,6 +95,7 @@ class GameResultRoutesTest : RoutesTestBase() {
             baseIncome = 1000,
             tipCount = 1,
             tipIncome = 100,
+            otherIncome = 0,
             totalIncome = 1100
         )
         val response = client.post("/users/1/results") {
@@ -121,6 +118,7 @@ class GameResultRoutesTest : RoutesTestBase() {
             baseIncome = 900,
             tipCount = 0,
             tipIncome = 0,
+            otherIncome = 0,
             totalIncome = 900
         )
         val response = client.put("/users/1/results/10") {

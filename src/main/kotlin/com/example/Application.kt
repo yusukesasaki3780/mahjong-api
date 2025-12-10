@@ -99,6 +99,7 @@ fun Application.module() {
     val gameSettingsRepository = ExposedGameSettingsRepository()
     val gameResultRepository = ExposedGameResultRepository()
     val shiftRepository = ExposedShiftRepository()
+    val specialHourlyWageRepository = ExposedSpecialHourlyWageRepository()
     val storeMasterRepository = ExposedStoreMasterRepository()
     val prefectureRepository = ExposedPrefectureRepository()
     val advancePaymentRepository = ExposedAdvancePaymentRepository()
@@ -126,14 +127,18 @@ fun Application.module() {
     val getAdvancePaymentUseCase = GetAdvancePaymentUseCase(advancePaymentRepository)
     val upsertAdvancePaymentUseCase = UpsertAdvancePaymentUseCase(advancePaymentRepository, auditLogger)
 
-    val registerShiftUseCase = RegisterShiftUseCase(shiftRepository)
-    val editShiftUseCase = EditShiftUseCase(shiftRepository, auditLogger)
-    val patchShiftUseCase = PatchShiftUseCase(shiftRepository, auditLogger)
+    val registerShiftUseCase = RegisterShiftUseCase(shiftRepository, specialHourlyWageRepository)
+    val editShiftUseCase = EditShiftUseCase(shiftRepository, specialHourlyWageRepository, auditLogger)
+    val patchShiftUseCase = PatchShiftUseCase(shiftRepository, specialHourlyWageRepository, auditLogger)
     val deleteShiftUseCase = DeleteShiftUseCase(shiftRepository, auditLogger)
     val getMonthlyShiftUseCase = GetMonthlyShiftUseCase(shiftRepository)
     val getDailyShiftUseCase = GetDailyShiftUseCase(shiftRepository)
     val getShiftRangeUseCase = GetShiftRangeUseCase(shiftRepository)
     val getShiftStatsUseCase = GetShiftStatsUseCase(shiftRepository)
+
+    val listSpecialHourlyWagesUseCase = ListSpecialHourlyWagesUseCase(specialHourlyWageRepository)
+    val createSpecialHourlyWageUseCase = CreateSpecialHourlyWageUseCase(specialHourlyWageRepository)
+    val deleteSpecialHourlyWageUseCase = DeleteSpecialHourlyWageUseCase(specialHourlyWageRepository)
 
     val calculateMonthlySalaryUseCase = CalculateMonthlySalaryUseCase(
         shiftRepository = shiftRepository,
@@ -164,6 +169,9 @@ fun Application.module() {
         getGameSettingsUseCase,
         updateGameSettingsUseCase,
         patchGameSettingsUseCase,
+        listSpecialHourlyWagesUseCase,
+        createSpecialHourlyWageUseCase,
+        deleteSpecialHourlyWageUseCase,
         recordGameResultUseCase,
         editGameResultUseCase,
         patchGameResultUseCase,

@@ -38,6 +38,7 @@ class PatchGameResultUseCase(
         val baseIncome: Long? = null,
         val tipCount: Int? = null,
         val tipIncome: Long? = null,
+        val otherIncome: Long? = null,
         val totalIncome: Long? = null,
         val note: String? = null
     )
@@ -55,6 +56,7 @@ class PatchGameResultUseCase(
             baseIncome = command.baseIncome,
             tipCount = command.tipCount,
             tipIncome = command.tipIncome,
+            otherIncome = command.otherIncome,
             totalIncome = command.totalIncome,
             note = command.note,
             updatedAt = Clock.System.now()
@@ -110,6 +112,7 @@ class PatchGameResultUseCase(
             command.baseIncome,
             command.tipIncome,
             command.tipCount,
+            command.otherIncome,
             command.totalIncome
         )
         val hasIncomeUpdates = incomeFields.any { it != null }
@@ -117,7 +120,7 @@ class PatchGameResultUseCase(
             throw DomainValidationException(
                 listOf(
                     FieldError(
-                        field = "baseIncome/tipIncome/tipCount/totalIncome",
+                        field = "baseIncome/tipIncome/tipCount/otherIncome/totalIncome",
                         code = "INCOMPLETE_INCOME_SET",
                         message = "Updating income requires all related fields together"
                     )
@@ -135,6 +138,7 @@ class PatchGameResultUseCase(
                 tipCount = command.tipCount!!,
                 tipIncome = command.tipIncome!!,
                 baseIncome = command.baseIncome!!,
+                otherIncome = command.otherIncome!!,
                 totalIncome = command.totalIncome!!,
                 tipUnit = tipUnit,
                 gameType = type,
@@ -150,6 +154,7 @@ class PatchGameResultUseCase(
         tipCount: Int,
         tipIncome: Long,
         baseIncome: Long,
+        otherIncome: Long,
         totalIncome: Long,
         tipUnit: Int,
         gameType: GameType,
@@ -171,6 +176,7 @@ class PatchGameResultUseCase(
             gameType = gameType,
             baseIncome = baseIncome,
             tipIncome = tipIncome,
+            otherIncome = otherIncome,
             place = place,
             settings = settings
         )

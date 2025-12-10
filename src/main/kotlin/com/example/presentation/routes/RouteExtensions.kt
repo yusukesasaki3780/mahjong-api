@@ -38,6 +38,19 @@ private val ALL_TIME_END = Instant.parse("3000-01-01T00:00:00Z")
 internal fun ApplicationCall.userIdOrNull(): Long? =
     parameters["userId"]?.toLongOrNull()
 
+/**
+ * JWT から現在ログインしているユーザーIDを取得します。
+ * 認証情報が無い場合は 401 を返して処理を停止します。
+ */
+internal suspend fun ApplicationCall.userId(): Long {
+    val actorId = principal<JWTPrincipal>()?.payload?.getClaim("userId")?.asLong()
+    if (actorId == null) {
+        respondUnauthorized()
+        error("Missing authenticated user id.")
+    }
+    return actorId
+}
+
 private suspend fun ApplicationCall.respondValidationErrors(
     errors: List<FieldError>,
     message: String = ValidationMessageResolver.defaultMessage(),

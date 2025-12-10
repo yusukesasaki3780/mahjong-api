@@ -44,12 +44,23 @@ class GetDashboardSummaryUseCase(
     data class SalarySummary(
         val baseWageTotal: Double,
         val nightExtraTotal: Double,
+        val specialAllowanceTotal: Double,
+        val specialAllowances: List<SpecialAllowanceSummary>,
         val transportTotal: Long,
         val gameIncomeTotal: Long,
         val advanceAmount: Double,
         val grossSalary: Double,
         val netSalary: Double,
         val incomeTax: Double
+    )
+
+    data class SpecialAllowanceSummary(
+        val type: String,
+        val label: String,
+        val unitPrice: Int,
+        val hours: Double,
+        val amount: Double,
+        val specialHourlyWageId: Long? = null
     )
 
     data class GameSummary(
@@ -92,6 +103,17 @@ class GetDashboardSummaryUseCase(
             salary = SalarySummary(
                 baseWageTotal = salary.baseWageTotal,
                 nightExtraTotal = salary.nightExtraTotal,
+                specialAllowanceTotal = salary.specialAllowanceTotal,
+                specialAllowances = salary.specialAllowances.map {
+                    SpecialAllowanceSummary(
+                        type = it.type,
+                        label = it.label,
+                        unitPrice = it.unitPrice,
+                        hours = it.hours,
+                        amount = it.amount,
+                        specialHourlyWageId = it.specialHourlyWageId
+                    )
+                },
                 transportTotal = salary.transportTotal,
                 gameIncomeTotal = salary.gameIncomeTotal,
                 advanceAmount = salary.advanceAmount,

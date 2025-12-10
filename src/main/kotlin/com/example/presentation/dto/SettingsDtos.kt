@@ -76,3 +76,9 @@ data class PatchGameSettingsRequest(
     val incomeTaxRate: Double? = null,
     val transportPerShift: Int? = null
 )
+
+@Serializable
+data class SpecialHourlyWageCreateRequest(
+    val label: String,
+    val hourlyWage: Int
+)

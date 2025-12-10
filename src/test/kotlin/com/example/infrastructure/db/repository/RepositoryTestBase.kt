@@ -3,7 +3,9 @@ package com.example.infrastructure.db.repository
 import com.example.infrastructure.db.tables.GameResultsTable
 import com.example.infrastructure.db.tables.GameSettingsTable
 import com.example.infrastructure.db.tables.ShiftBreaksTable
+import com.example.infrastructure.db.tables.ShiftSpecialAllowancesTable
 import com.example.infrastructure.db.tables.ShiftsTable
+import com.example.infrastructure.db.tables.SpecialHourlyWagesTable
 import com.example.infrastructure.db.tables.UserCredentialsTable
 import com.example.infrastructure.db.tables.UsersTable
 import java.util.UUID
@@ -34,8 +36,10 @@ abstract class RepositoryTestBase {
                 UserCredentialsTable,
                 GameSettingsTable,
                 GameResultsTable,
+                SpecialHourlyWagesTable,
                 ShiftsTable,
-                ShiftBreaksTable
+                ShiftBreaksTable,
+                ShiftSpecialAllowancesTable
             )
         }
 

@@ -34,6 +34,7 @@ class RecordGameResultUseCaseTest {
             baseIncome = 800,
             tipCount = 2,
             tipIncome = 100,
+            otherIncome = 0,
             totalIncome = 900
         )
 
@@ -57,6 +58,7 @@ class RecordGameResultUseCaseTest {
             baseIncome = 800,
             tipCount = 2,
             tipIncome = 120,
+            otherIncome = 0,
             totalIncome = 920
         )
 
@@ -78,7 +80,8 @@ class RecordGameResultUseCaseTest {
             baseIncome = 800,
             tipCount = 1,
             tipIncome = 100,
-            totalIncome = 900
+            otherIncome = 0,
+            totalIncome = 950
         )
 
         assertFailsWith<DomainValidationException> { useCase(command) }

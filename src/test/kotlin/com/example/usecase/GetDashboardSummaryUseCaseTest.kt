@@ -62,6 +62,8 @@ class GetDashboardSummaryUseCaseTest {
                 totalNightMinutes = 0,
                 baseWageTotal = 1200.0,
                 nightExtraTotal = 0.0,
+                specialAllowanceTotal = 0.0,
+                specialAllowances = emptyList(),
                 transportTotal = 500,
                 gameIncomeTotal = 2000,
                 advanceAmount = 0.0,
@@ -88,6 +90,7 @@ class GetDashboardSummaryUseCaseTest {
                     baseIncome = 500,
                     tipCount = 1,
                     tipIncome = 100,
+                    otherIncome = 0,
                     totalIncome = 600,
                     createdAt = Instant.parse("2025-01-01T10:10:00Z"),
                     updatedAt = Instant.parse("2025-01-01T10:10:00Z")
@@ -101,6 +104,7 @@ class GetDashboardSummaryUseCaseTest {
                     baseIncome = 400,
                     tipCount = 0,
                     tipIncome = 0,
+                    otherIncome = 0,
                     totalIncome = 400,
                     createdAt = Instant.parse("2025-01-02T10:10:00Z"),
                     updatedAt = Instant.parse("2025-01-02T10:10:00Z")

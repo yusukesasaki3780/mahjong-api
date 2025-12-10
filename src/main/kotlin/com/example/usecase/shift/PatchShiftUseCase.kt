@@ -14,6 +14,7 @@ import com.example.domain.model.ShiftBreak
 import com.example.domain.repository.ShiftBreakPatch
 import com.example.domain.repository.ShiftPatch
 import com.example.domain.repository.ShiftRepository
+import com.example.domain.repository.SpecialHourlyWageRepository
 import com.example.infrastructure.logging.AuditLogger
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
@@ -21,6 +22,7 @@ import kotlinx.datetime.LocalDate
 
 class PatchShiftUseCase(
     private val repository: ShiftRepository,
+    private val specialHourlyWageRepository: SpecialHourlyWageRepository,
     private val auditLogger: AuditLogger
 ) {
 
@@ -31,7 +33,9 @@ class PatchShiftUseCase(
         val startTime: Instant? = null,
         val endTime: Instant? = null,
         val memo: String? = null,
-        val breaks: List<BreakPatchCommand>? = null
+        val breaks: List<BreakPatchCommand>? = null,
+        val specialHourlyWageId: Long? = null,
+        val clearSpecialHourlyWage: Boolean = false
     )
 
     data class BreakPatchCommand(
@@ -44,6 +48,11 @@ class PatchShiftUseCase(
     suspend operator fun invoke(command: Command, auditContext: AuditContext): Shift {
         val before = repository.findById(command.shiftId)
             ?: throw IllegalArgumentException("Shift not found: ${command.shiftId}")
+        val specialWage = when {
+            command.clearSpecialHourlyWage -> null
+            command.specialHourlyWageId != null -> requireSpecialWage(before.userId, command.specialHourlyWageId)
+            else -> before.specialHourlyWage
+        }
         val normalizedBreaks = normalizeBreakCommands(command.breaks, before.breaks)
         val normalizedCommand = command.copy(breaks = normalizedBreaks)
         validate(normalizedCommand, before)
@@ -53,6 +62,12 @@ class PatchShiftUseCase(
             startTime = normalizedCommand.startTime,
             endTime = normalizedCommand.endTime,
             memo = normalizedCommand.memo,
+            specialHourlyWageId = when {
+                command.clearSpecialHourlyWage -> null
+                command.specialHourlyWageId != null -> command.specialHourlyWageId
+                else -> null
+            },
+            specialHourlyWageIdSet = command.clearSpecialHourlyWage || command.specialHourlyWageId != null,
             updatedAt = Clock.System.now(),
             breakPatches = normalizedCommand.breaks?.map {
                 ShiftBreakPatch(
@@ -64,6 +79,7 @@ class PatchShiftUseCase(
             }
         )
         val result = repository.patchShift(normalizedCommand.userId, normalizedCommand.shiftId, patch)
+            .copy(specialHourlyWage = specialWage, specialHourlyWageId = specialWage?.id)
 
         auditLogger.log(
             entityType = "SHIFT",
@@ -235,5 +251,17 @@ class PatchShiftUseCase(
             }
         }
     }
+
+    private suspend fun requireSpecialWage(userId: Long, specialWageId: Long) =
+        specialHourlyWageRepository.findById(specialWageId)?.takeIf { it.userId == userId }
+            ?: throw DomainValidationException(
+                listOf(
+                    FieldError(
+                        field = "specialHourlyWageId",
+                        code = "INVALID_SPECIAL_WAGE",
+                        message = "指定された特別時給が利用できません"
+                    )
+                )
+            )
 }
 

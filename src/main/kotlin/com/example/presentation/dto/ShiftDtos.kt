@@ -3,12 +3,14 @@
 package com.example.presentation.dto
 
 import com.example.domain.model.Shift
+import com.example.domain.model.SpecialHourlyWage
 import com.example.presentation.util.ShiftTimeCodec
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.plus
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonNames
 
@@ -32,7 +34,8 @@ data class ShiftRequest(
     val memo: String? = null,
     val breaks: List<ShiftBreakRequest> = emptyList(),
     val createdAt: Instant? = null,
-    val breakMinutes: Int? = null
+    val breakMinutes: Int? = null,
+    val specialHourlyWageId: Long? = null
 )
 
 @Serializable
@@ -56,7 +59,9 @@ data class PatchShiftRequest(
     val breakMinutes: Int? = null,
     @JsonNames("memo", "notes")
     val memo: String? = null,
-    val breaks: List<PatchShiftBreakRequest>? = null
+    val breaks: List<PatchShiftBreakRequest>? = null,
+    val specialHourlyWageId: Long? = null,
+    val clearSpecialHourlyWage: Boolean? = null
 )
 
 @Serializable
@@ -76,6 +81,9 @@ data class ShiftResponse(
     val endDateTime: String,
     val endDayOffset: Int,
     val memo: String?,
+    @SerialName("specialWageId")
+    val specialHourlyWageId: Long?,
+    val specialHourlyWage: SpecialHourlyWageResponse?,
     val breaks: List<ShiftBreakResponse>
 ) {
     companion object {
@@ -96,6 +104,8 @@ data class ShiftResponse(
                 endDateTime = ShiftTimeCodec.formatDateTime(aligned.endInstant),
                 endDayOffset = aligned.endDayOffset,
                 memo = shift.memo,
+                specialHourlyWageId = shift.specialHourlyWageId ?: shift.specialHourlyWage?.id,
+                specialHourlyWage = shift.specialHourlyWage?.let { SpecialHourlyWageResponse.from(it) },
                 breaks = shift.breaks.map {
                     ShiftBreakResponse(
                         startTime = ShiftTimeCodec.format(it.breakStart),
@@ -104,6 +114,21 @@ data class ShiftResponse(
                 }
             )
         }
+    }
+}
+
+@Serializable
+data class SpecialHourlyWageResponse(
+    val id: Long,
+    val label: String,
+    val hourlyWage: Int
+) {
+    companion object {
+        fun from(model: SpecialHourlyWage) = SpecialHourlyWageResponse(
+            id = model.id,
+            label = model.label,
+            hourlyWage = model.hourlyWage
+        )
     }
 }
 

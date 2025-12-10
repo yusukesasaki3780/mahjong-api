@@ -15,6 +15,8 @@ data class DashboardSummaryResponse(
     val workShiftCount: Int,
     val salaryBaseWageTotal: Double,
     val salaryNightExtraTotal: Double,
+    val salarySpecialAllowanceTotal: Double,
+    val salarySpecialAllowances: List<DashboardSpecialAllowanceResponse>,
     val salaryTransportTotal: Long,
     val salaryGameIncomeTotal: Long,
     val salaryAdvanceAmount: Double,
@@ -40,6 +42,17 @@ data class DashboardSummaryResponse(
                 workShiftCount = result.work.totalShifts,
                 salaryBaseWageTotal = result.salary.baseWageTotal,
                 salaryNightExtraTotal = result.salary.nightExtraTotal,
+                salarySpecialAllowanceTotal = result.salary.specialAllowanceTotal,
+                salarySpecialAllowances = result.salary.specialAllowances.map {
+                    DashboardSpecialAllowanceResponse(
+                        type = it.type,
+                        label = it.label,
+                        unitPrice = it.unitPrice,
+                        hours = it.hours,
+                        amount = it.amount,
+                        specialHourlyWageId = it.specialHourlyWageId
+                    )
+                },
                 salaryTransportTotal = result.salary.transportTotal,
                 salaryGameIncomeTotal = result.salary.gameIncomeTotal,
                 salaryAdvanceAmount = result.salary.advanceAmount,
@@ -57,3 +70,13 @@ data class DashboardSummaryResponse(
         }
     }
 }
+
+@Serializable
+data class DashboardSpecialAllowanceResponse(
+    val type: String,
+    val label: String,
+    val unitPrice: Int,
+    val hours: Double,
+    val amount: Double,
+    val specialHourlyWageId: Long? = null
+)

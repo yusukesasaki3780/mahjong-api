@@ -4,6 +4,7 @@ import com.example.common.error.DomainValidationException
 import com.example.domain.model.Shift
 import com.example.domain.model.ShiftBreak
 import com.example.domain.repository.ShiftRepository
+import com.example.domain.repository.SpecialHourlyWageRepository
 import com.example.usecase.shift.PatchShiftUseCase
 import com.example.usecase.TestAuditSupport
 import io.mockk.coEvery
@@ -19,7 +20,8 @@ import kotlin.test.assertFailsWith
 class PatchShiftUseCaseTest {
 
     private val repository = mockk<ShiftRepository>()
-    private val useCase = PatchShiftUseCase(repository, TestAuditSupport.auditLogger)
+    private val specialRepository = mockk<SpecialHourlyWageRepository>(relaxed = true)
+    private val useCase = PatchShiftUseCase(repository, specialRepository, TestAuditSupport.auditLogger)
 
     @Test
     fun `forwards patch when payload is valid`() = runTest {
