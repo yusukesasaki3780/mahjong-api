@@ -2,6 +2,7 @@ package com.example.infrastructure.db.repository
 
 import com.example.domain.model.User
 import kotlinx.datetime.Clock
+import kotlin.math.absoluteValue
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -50,7 +51,8 @@ class ExposedUserRepositoryIntegrationTest : RepositoryTestBase() {
         nickname: String = "nick",
         store: String = "Store",
         prefecture: String = "01",
-        email: String = "$name@example.com"
+        email: String = "$name@example.com",
+        zooId: Int = ((name.hashCode().absoluteValue % 900000) + 1)
     ): User {
         val now = Clock.System.now()
         return User(
@@ -60,6 +62,7 @@ class ExposedUserRepositoryIntegrationTest : RepositoryTestBase() {
             storeName = store,
             prefectureCode = prefecture,
             email = email,
+            zooId = zooId,
             createdAt = now,
             updatedAt = now
         )

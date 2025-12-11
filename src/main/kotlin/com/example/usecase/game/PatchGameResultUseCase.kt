@@ -1,9 +1,9 @@
-﻿package com.example.usecase.game
+package com.example.usecase.game
 
 /**
- * ### このファイルの役割
- * - ゲーム結果の一部項目だけを更新する PATCH 用ユースケースです。
- * - 差分適用のためのパッチモデルを組み立て、監査ログも部分更新に対応できるようにしています。
+ * ### ̃t@C̖
+ * - Q[ʂ̈ꕔڂXV PATCH p[XP[XłB
+ * - Kp̂߂̃pb`fgݗāAčOXVɑΉł悤ɂĂ܂B
  */
 
 import com.example.common.error.DomainValidationException
@@ -15,6 +15,7 @@ import com.example.domain.repository.GameResultPatch
 import com.example.domain.repository.GameResultRepository
 import com.example.domain.repository.GameSettingsRepository
 import com.example.infrastructure.logging.AuditLogger
+import java.util.UUID
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
@@ -40,12 +41,42 @@ class PatchGameResultUseCase(
         val tipIncome: Long? = null,
         val otherIncome: Long? = null,
         val totalIncome: Long? = null,
-        val note: String? = null
+        val note: String? = null,
+        val storeId: Long? = null,
+        val simpleBatchId: UUID? = null
     )
 
     suspend operator fun invoke(command: Command, auditContext: AuditContext): GameResult {
         val before = repository.findById(command.resultId)
             ?: throw IllegalArgumentException("Game result not found: ${command.resultId}")
+
+        val isSimpleBatchRecord = before.simpleBatchId != null
+        val isSimpleBatchFinalPatch = isSimpleBatchRecord && command.simpleBatchId != null && command.simpleBatchId == before.simpleBatchId
+
+        if (isSimpleBatchRecord && !isSimpleBatchFinalPatch) {
+            throw DomainValidationException(
+                listOf(
+                    FieldError(
+                        field = "simpleBatchId",
+                        code = "SIMPLE_BATCH_EDIT_FORBIDDEN",
+                        message = "??????????????????"
+                    )
+                ),
+                message = "??????????????????"
+            )
+        }
+        if (before.isFinalIncomeRecord && !isSimpleBatchFinalPatch) {
+            throw DomainValidationException(
+                listOf(
+                    FieldError(
+                        field = "isFinalIncomeRecord",
+                        code = "FINAL_INCOME_EDIT_FORBIDDEN",
+                        message = "????????????????"
+                    )
+                ),
+                message = "????????????????"
+            )
+        }
 
         validate(command, before)
 
@@ -59,6 +90,12 @@ class PatchGameResultUseCase(
             otherIncome = command.otherIncome,
             totalIncome = command.totalIncome,
             note = command.note,
+            storeId = command.storeId,
+            simpleBatchId = command.simpleBatchId ?: before.simpleBatchId,
+            isFinalIncomeRecord = when {
+                isSimpleBatchFinalPatch && command.baseIncome != null && command.totalIncome != null -> true
+                else -> null
+            },
             updatedAt = Clock.System.now()
         )
         val result = repository.patchGameResult(command.userId, command.resultId, patch)
@@ -116,7 +153,8 @@ class PatchGameResultUseCase(
             command.totalIncome
         )
         val hasIncomeUpdates = incomeFields.any { it != null }
-        if (hasIncomeUpdates && incomeFields.any { it == null }) {
+        val isSimpleMode = existing.simpleBatchId != null
+        if (hasIncomeUpdates && !isSimpleMode && incomeFields.any { it == null }) {
             throw DomainValidationException(
                 listOf(
                     FieldError(
@@ -127,8 +165,23 @@ class PatchGameResultUseCase(
                 )
             )
         }
+        if (hasIncomeUpdates && isSimpleMode) {
+            val hasBase = command.baseIncome != null
+            val hasTotal = command.totalIncome != null
+            if (hasBase.xor(hasTotal)) {
+                throw DomainValidationException(
+                    listOf(
+                        FieldError(
+                            field = "baseIncome/totalIncome",
+                            code = "INCOMPLETE_SIMPLE_INCOME_SET",
+                            message = "Simple batch updates require both baseIncome and totalIncome."
+                        )
+                    )
+                )
+            }
+        }
 
-        if (hasIncomeUpdates) {
+        if (hasIncomeUpdates && !isSimpleMode) {
             val type = command.gameType ?: existing.gameType
             val settings = settingsRepository.resolveSettings(command.userId)
             val tipUnit = settings.tipUnit(type)

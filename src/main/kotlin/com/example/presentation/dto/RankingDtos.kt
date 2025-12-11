@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class RankingEntryResponse(
     val userId: Long,
+    val zooId: Int,
     val name: String,
     val totalIncome: Long,
     val gameCount: Int,
@@ -14,6 +15,7 @@ data class RankingEntryResponse(
     companion object {
         fun from(entry: RankingEntry) = RankingEntryResponse(
             userId = entry.userId,
+            zooId = entry.zooId,
             name = entry.name,
             totalIncome = entry.totalIncome,
             gameCount = entry.gameCount,

@@ -26,6 +26,7 @@ class CreateUserUseCaseTest {
     fun `creates user when command valid`() = runTest {
         val created = TestFixtures.user()
         coEvery { userRepository.findByEmail("alice@example.com") } returns null
+        coEvery { userRepository.findByZooId(1234) } returns null
         coEvery { userRepository.createUser(any()) } returns created
         coEvery { credentialRepository.createCredentials(created.id!!, "alice@example.com", any()) } returns Unit
         coEvery { createDefaultSettingsUseCase(created.id!!) } returns Unit
@@ -37,6 +38,7 @@ class CreateUserUseCaseTest {
                 storeName = "Mahjong",
                 prefectureCode = "13",
                 email = "alice@example.com",
+                zooId = 1234,
                 password = "StrongPass123!",
                 passwordConfirm = "StrongPass123!"
             )
@@ -51,6 +53,7 @@ class CreateUserUseCaseTest {
     @Test
     fun `invalid prefecture throws validation error`() = runTest {
         coEvery { userRepository.findByEmail(any()) } returns null
+        coEvery { userRepository.findByZooId(any()) } returns null
         assertFailsWith<ConstraintViolationException> {
             useCase(
                 CreateUserUseCase.Command(
@@ -59,6 +62,7 @@ class CreateUserUseCaseTest {
                     storeName = "Mahjong",
                     prefectureCode = "ABC",
                     email = "alice@example.com",
+                    zooId = 1234,
                     password = "StrongPass123!",
                     passwordConfirm = "StrongPass123!"
                 )
@@ -76,6 +80,7 @@ class CreateUserUseCaseTest {
                     storeName = "Mahjong",
                     prefectureCode = "13",
                     email = "alice@example.com",
+                    zooId = 1234,
                     password = "StrongPass123!",
                     passwordConfirm = "differentPass"
                 )
@@ -86,6 +91,7 @@ class CreateUserUseCaseTest {
     @Test
     fun `duplicate email throws domain validation error`() = runTest {
         coEvery { userRepository.findByEmail("alice@example.com") } returns TestFixtures.user()
+        coEvery { userRepository.findByZooId(any()) } returns null
         assertFailsWith<DomainValidationException> {
             useCase(
                 CreateUserUseCase.Command(
@@ -94,6 +100,27 @@ class CreateUserUseCaseTest {
                     storeName = "Mahjong",
                     prefectureCode = "13",
                     email = "alice@example.com",
+                    zooId = 1234,
+                    password = "StrongPass123!",
+                    passwordConfirm = "StrongPass123!"
+                )
+            )
+        }
+    }
+
+    @Test
+    fun `duplicate zoo id throws domain validation error`() = runTest {
+        coEvery { userRepository.findByEmail(any()) } returns null
+        coEvery { userRepository.findByZooId(1234) } returns TestFixtures.user()
+        assertFailsWith<DomainValidationException> {
+            useCase(
+                CreateUserUseCase.Command(
+                    name = "Alice",
+                    nickname = "ali",
+                    storeName = "Mahjong",
+                    prefectureCode = "13",
+                    email = "alice@example.com",
+                    zooId = 1234,
                     password = "StrongPass123!",
                     passwordConfirm = "StrongPass123!"
                 )
@@ -104,6 +131,7 @@ class CreateUserUseCaseTest {
     @Test
     fun `weak password throws domain validation error`() = runTest {
         coEvery { userRepository.findByEmail(any()) } returns null
+        coEvery { userRepository.findByZooId(any()) } returns null
         assertFailsWith<DomainValidationException> {
             useCase(
                 CreateUserUseCase.Command(
@@ -112,6 +140,7 @@ class CreateUserUseCaseTest {
                     storeName = "Mahjong",
                     prefectureCode = "13",
                     email = "alice@example.com",
+                    zooId = 1234,
                     password = "alllowercase123",
                     passwordConfirm = "alllowercase123"
                 )

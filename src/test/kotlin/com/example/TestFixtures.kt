@@ -26,6 +26,7 @@ object TestFixtures {
         storeName = "Store",
         prefectureCode = "01",
         email = "user$id@example.com",
+        zooId = (100000 + id).toInt(),
         createdAt = now,
         updatedAt = now
     )
@@ -60,6 +61,7 @@ object TestFixtures {
         otherIncome = 0,
         totalIncome = 1100,
         note = "memo",
+        isFinalIncomeRecord = false,
         createdAt = now,
         updatedAt = now
     )
@@ -112,12 +114,14 @@ object TestFixtures {
 
     fun rankingEntry(
         userId: Long = 1,
+        zooId: Int = (100000 + userId).toInt(),
         name: String = "User$userId",
         totalIncome: Long = 5000,
         gameCount: Int = 10,
         averagePlace: Double? = 2.0
     ) = RankingEntry(
         userId = userId,
+        zooId = zooId,
         name = name,
         totalIncome = totalIncome,
         gameCount = gameCount,

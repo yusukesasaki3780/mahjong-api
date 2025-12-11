@@ -35,6 +35,7 @@ data class UserResponse(
     val storeName: String,
     val prefectureCode: String,
     val email: String,
+    val zooId: Int,
     val createdAt: String,
     val updatedAt: String
 ) {
@@ -46,6 +47,7 @@ data class UserResponse(
             storeName = user.storeName,
             prefectureCode = user.prefectureCode,
             email = user.email,
+            zooId = user.zooId,
             createdAt = user.createdAt.toString(),
             updatedAt = user.updatedAt.toString()
         )

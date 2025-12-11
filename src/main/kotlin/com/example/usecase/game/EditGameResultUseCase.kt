@@ -1,17 +1,20 @@
-ï»¿package com.example.usecase.game
+package com.example.usecase.game
 
 /**
- * ### ã“ã®ãƒ•ã‚¡ã‚¤ãƒ«ã®å½¹å‰²
- * - ã‚²ãƒ¼ãƒ çµæœã‚’ä¸¸ã”ã¨æ›´æ–°ã™ã‚‹ãƒ¦ãƒ¼ã‚¹ã‚±ãƒ¼ã‚¹ã§ã€æ¤œè¨¼ã¨ç›£æŸ»ãƒ­ã‚°ã‚’ä¸€æ‹¬ã§æ‰±ã„ã¾ã™ã€‚
- * - å…¨é …ç›®ã‚’ä¸Šæ›¸ãã™ã‚‹ PUT æ“ä½œã®å®Ÿæ…‹ã‚’ã“ã“ã«é–‰ã˜è¾¼ã‚ã¦ã„ã¾ã™ã€‚
+ * ### ‚±‚Ìƒtƒ@ƒCƒ‹‚Ì–ğŠ„
+ * - ƒQ[ƒ€Œ‹‰Ê‚ğŠÛ‚²‚ÆXV‚·‚éƒ†[ƒXƒP[ƒX‚ÅAŒŸØ‚ÆŠÄ¸ƒƒO‚ğˆêŠ‡‚Åˆµ‚¢‚Ü‚·B
+ * - ‘S€–Ú‚ğã‘‚«‚·‚é PUT ‘€ì‚ÌÀ‘Ô‚ğ‚±‚±‚É•Â‚¶‚ß‚Ä‚¢‚Ü‚·B
  */
 
+import com.example.common.error.DomainValidationException
+import com.example.common.error.FieldError
 import com.example.domain.model.AuditContext
 import com.example.domain.model.GameResult
 import com.example.domain.model.GameType
 import com.example.domain.repository.GameResultRepository
 import com.example.domain.repository.GameSettingsRepository
 import com.example.infrastructure.logging.AuditLogger
+import java.util.UUID
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
@@ -23,7 +26,7 @@ import org.valiktor.functions.isIn
 import org.valiktor.validate
 
 /**
- * ã‚²ãƒ¼ãƒ çµæœã®ä¿®æ­£ã‚’è¡Œã†ãƒ¦ãƒ¼ã‚¹ã‚±ãƒ¼ã‚¹ã€‚
+ * ƒQ[ƒ€Œ‹‰Ê‚ÌC³‚ğs‚¤ƒ†[ƒXƒP[ƒXB
  */
 class EditGameResultUseCase(
     private val repository: GameResultRepository,
@@ -44,7 +47,9 @@ class EditGameResultUseCase(
         val otherIncome: Long,
         val totalIncome: Long,
         val note: String? = null,
-        val createdAt: Instant
+        val createdAt: Instant,
+        val storeId: Long? = null,
+        val simpleBatchId: UUID? = null
     )
 
     suspend operator fun invoke(command: Command, auditContext: AuditContext): GameResult {
@@ -55,8 +60,35 @@ class EditGameResultUseCase(
         val before = repository.findById(command.id)
             ?: throw IllegalArgumentException("Game result not found: ${command.id}")
 
+        if (before.simpleBatchId != null) {
+            throw DomainValidationException(
+                listOf(
+                    FieldError(
+                        field = "simpleBatchId",
+                        code = "SIMPLE_BATCH_EDIT_FORBIDDEN",
+                        message = "‚Ü‚Æ‚ß‚Ä“o˜^‚Ì¬Ñ‚Í•ÒW‚Å‚«‚Ü‚¹‚ñB"
+                    )
+                ),
+                message = "‚Ü‚Æ‚ß‚Ä“o˜^‚Ì¬Ñ‚Í•ÒW‚Å‚«‚Ü‚¹‚ñB"
+            )
+        }
+        if (before.isFinalIncomeRecord) {
+            throw DomainValidationException(
+                listOf(
+                    FieldError(
+                        field = "isFinalIncomeRecord",
+                        code = "FINAL_INCOME_EDIT_FORBIDDEN",
+                        message = "ÅIûx‚Ì¬Ñ‚Í•ÒW‚Å‚«‚Ü‚¹‚ñB"
+                    )
+                ),
+                message = "ÅIûx‚Ì¬Ñ‚Í•ÒW‚Å‚«‚Ü‚¹‚ñB"
+            )
+        }
+
         val playedAtInstant = command.playedAt.atStartOfDayIn(timeZone)
-        if (command.tipIncome != command.tipCount.toLong() * tipUnit) {
+        val effectiveSimpleBatchId = command.simpleBatchId ?: before.simpleBatchId
+        val isSimpleMode = effectiveSimpleBatchId != null
+        if (!isSimpleMode && command.tipIncome != command.tipCount.toLong() * tipUnit) {
             logger.warn(
                 "tipIncome mismatch on edit user={} result={} expected={} actual={}",
                 command.userId,
@@ -65,15 +97,17 @@ class EditGameResultUseCase(
                 command.tipIncome
             )
         }
-        ensureTotalIncomeMatches(
-            totalIncome = command.totalIncome,
-            gameType = command.gameType,
-            baseIncome = command.baseIncome,
-            tipIncome = command.tipIncome,
-            otherIncome = command.otherIncome,
-            place = command.place,
-            settings = settings
-        )
+        if (!isSimpleMode) {
+            ensureTotalIncomeMatches(
+                totalIncome = command.totalIncome,
+                gameType = command.gameType,
+                baseIncome = command.baseIncome,
+                tipIncome = command.tipIncome,
+                otherIncome = command.otherIncome,
+                place = command.place,
+                settings = settings
+            )
+        }
 
         val updated = GameResult(
             id = command.id,
@@ -87,6 +121,9 @@ class EditGameResultUseCase(
             otherIncome = command.otherIncome,
             totalIncome = command.totalIncome,
             note = command.note,
+            storeId = command.storeId ?: before.storeId,
+            isFinalIncomeRecord = before.isFinalIncomeRecord,
+            simpleBatchId = effectiveSimpleBatchId,
             createdAt = command.createdAt,
             updatedAt = Clock.System.now()
         )

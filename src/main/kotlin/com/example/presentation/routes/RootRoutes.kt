@@ -11,7 +11,9 @@ import com.example.usecase.auth.LoginUserUseCase
 import com.example.usecase.auth.RefreshAccessTokenUseCase
 import com.example.usecase.dashboard.GetDashboardSummaryUseCase
 import com.example.usecase.game.DeleteGameResultUseCase
+import com.example.usecase.game.DeleteSimpleBatchResultsUseCase
 import com.example.usecase.game.EditGameResultUseCase
+import com.example.usecase.game.FinishSimpleBatchUseCase
 import com.example.usecase.game.GetGameResultUseCase
 import com.example.usecase.game.GetRankingUseCase
 import com.example.usecase.advance.GetAdvancePaymentUseCase
@@ -19,6 +21,7 @@ import com.example.usecase.advance.UpsertAdvancePaymentUseCase
 import com.example.usecase.game.GetUserStatsUseCase
 import com.example.usecase.game.PatchGameResultUseCase
 import com.example.usecase.game.RecordGameResultUseCase
+import com.example.usecase.game.StartSimpleBatchUseCase
 import com.example.usecase.prefecture.GetPrefectureListUseCase
 import com.example.usecase.salary.CalculateMonthlySalaryUseCase
 import com.example.usecase.settings.GetGameSettingsUseCase
@@ -66,6 +69,9 @@ class RootRoutes(
     private val deleteGameResultUseCase: DeleteGameResultUseCase,
     private val getGameResultUseCase: GetGameResultUseCase,
     private val getUserStatsUseCase: GetUserStatsUseCase,
+    private val startSimpleBatchUseCase: StartSimpleBatchUseCase,
+    private val finishSimpleBatchUseCase: FinishSimpleBatchUseCase,
+    private val deleteSimpleBatchResultsUseCase: DeleteSimpleBatchResultsUseCase,
     private val getRankingUseCase: GetRankingUseCase,
     private val registerShiftUseCase: RegisterShiftUseCase,
     private val editShiftUseCase: EditShiftUseCase,
@@ -120,7 +126,10 @@ class RootRoutes(
                 patchGameResultUseCase = patchGameResultUseCase,
                 deleteGameResultUseCase = deleteGameResultUseCase,
                 getGameResultUseCase = getGameResultUseCase,
-                getUserStatsUseCase = getUserStatsUseCase
+                getUserStatsUseCase = getUserStatsUseCase,
+                startSimpleBatchUseCase = startSimpleBatchUseCase,
+                finishSimpleBatchUseCase = finishSimpleBatchUseCase,
+                deleteSimpleBatchResultsUseCase = deleteSimpleBatchResultsUseCase
             )
             installRankingRoutes(getRankingUseCase = getRankingUseCase)
             installShiftRoutes(

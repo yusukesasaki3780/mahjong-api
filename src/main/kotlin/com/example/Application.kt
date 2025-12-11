@@ -123,6 +123,9 @@ fun Application.module() {
     val deleteGameResultUseCase = DeleteGameResultUseCase(gameResultRepository, auditLogger)
     val getGameResultUseCase = GetGameResultUseCase(gameResultRepository)
     val getUserStatsUseCase = GetUserStatsUseCase(gameResultRepository)
+    val startSimpleBatchUseCase = StartSimpleBatchUseCase(storeMasterRepository)
+    val finishSimpleBatchUseCase = FinishSimpleBatchUseCase(gameResultRepository, gameSettingsRepository)
+    val deleteSimpleBatchResultsUseCase = DeleteSimpleBatchResultsUseCase(gameResultRepository)
     val getRankingUseCase = GetRankingUseCase(userRepository)
     val getAdvancePaymentUseCase = GetAdvancePaymentUseCase(advancePaymentRepository)
     val upsertAdvancePaymentUseCase = UpsertAdvancePaymentUseCase(advancePaymentRepository, auditLogger)
@@ -178,6 +181,9 @@ fun Application.module() {
         deleteGameResultUseCase,
         getGameResultUseCase,
         getUserStatsUseCase,
+        startSimpleBatchUseCase,
+        finishSimpleBatchUseCase,
+        deleteSimpleBatchResultsUseCase,
         getRankingUseCase,
         registerShiftUseCase,
         editShiftUseCase,

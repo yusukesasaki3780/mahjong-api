@@ -35,12 +35,13 @@ class GetUserStatsUseCase(
         val results = repository.getUserResults(command.userId, command.range)
         val average = repository.getAveragePlace(command.userId, command.range)
         val income = repository.getTotalIncome(command.userId, command.range)
+        val playableCount = results.count { !it.isFinalIncomeRecord }
 
         return Result(
             userId = command.userId,
             range = command.range,
             averagePlace = average,
-            totalGames = results.size,
+            totalGames = playableCount,
             totalIncome = income,
             results = results
         )

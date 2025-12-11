@@ -1,5 +1,7 @@
 package com.example.domain.model
 
+import com.example.common.serialization.UUIDSerializer
+import java.util.UUID
 import kotlinx.datetime.Instant
 import kotlinx.serialization.Serializable
 
@@ -11,7 +13,7 @@ data class GameResult(
     val id: Long? = null,
     val userId: Long,
     val gameType: GameType,
-    val playedAt: Instant,
+    val playedAt: Instant?,
     val place: Int,
     val baseIncome: Long,
     val tipCount: Int,
@@ -19,6 +21,11 @@ data class GameResult(
     val otherIncome: Long,
     val totalIncome: Long,
     val note: String? = null,
+    val storeId: Long? = null,
+    val storeName: String? = null,
+    val isFinalIncomeRecord: Boolean = false,
+    @Serializable(with = UUIDSerializer::class)
+    val simpleBatchId: UUID? = null,
     val createdAt: Instant,
     val updatedAt: Instant
 )

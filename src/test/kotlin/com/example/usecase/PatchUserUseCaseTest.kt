@@ -65,7 +65,8 @@ class PatchUserUseCaseTest {
         nickname: String,
         store: String = "Store",
         prefecture: String = "01",
-        email: String = "user$id@example.com"
+        email: String = "user$id@example.com",
+        zooId: Int = (100000 + id).toInt()
     ): User = User(
         id = id,
         name = name,
@@ -73,6 +74,7 @@ class PatchUserUseCaseTest {
         storeName = store,
         prefectureCode = prefecture,
         email = email,
+        zooId = zooId,
         createdAt = Clock.System.now(),
         updatedAt = Clock.System.now()
     )

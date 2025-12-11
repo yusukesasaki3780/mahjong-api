@@ -13,6 +13,7 @@ object UsersTable : Table("users") {
     val storeName = varchar("store_name", length = 150)
     val prefectureCode = varchar("prefecture_code", length = 2)
     val email = varchar("email", length = 255)
+    val zooId = integer("zoo_id")
     val createdAt = timestamp("created_at")
     val updatedAt = timestamp("updated_at")
 
@@ -20,5 +21,6 @@ object UsersTable : Table("users") {
 
     init {
         uniqueIndex("uq_users_email", email)
+        uniqueIndex("uq_users_zoo_id", zooId)
     }
 }

@@ -13,6 +13,7 @@ data class RegisterRequest(
     val storeName: String,
     val prefectureCode: String,
     val email: String,
+    val zooId: Int,
     val password: String,
     val passwordConfirm: String
 )

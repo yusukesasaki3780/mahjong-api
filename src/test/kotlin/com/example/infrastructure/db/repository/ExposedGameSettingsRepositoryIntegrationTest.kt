@@ -65,6 +65,7 @@ class ExposedGameSettingsRepositoryIntegrationTest : RepositoryTestBase() {
                 it[storeName] = "Store"
                 it[prefectureCode] = "01"
                 it[email] = "settings-${now.toEpochMilliseconds()}@example.com"
+                it[zooId] = (now.toEpochMilliseconds() % 900_000).toInt() + 1
                 it[createdAt] = now
                 it[updatedAt] = now
             } get UsersTable.userId

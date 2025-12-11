@@ -1,6 +1,7 @@
 package com.example.domain.repository
 
 import com.example.domain.model.GameType
+import java.util.UUID
 import kotlinx.datetime.Instant
 
 /**
@@ -16,5 +17,8 @@ data class GameResultPatch(
     val otherIncome: Long? = null,
     val totalIncome: Long? = null,
     val note: String? = null,
+    val storeId: Long? = null,
+    val simpleBatchId: UUID? = null,
+    val isFinalIncomeRecord: Boolean? = null,
     val updatedAt: Instant? = null
 )

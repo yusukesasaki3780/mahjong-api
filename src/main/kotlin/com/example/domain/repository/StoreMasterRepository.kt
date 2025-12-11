@@ -9,4 +9,5 @@ import com.example.domain.model.StoreMaster
  */
 interface StoreMasterRepository {
     suspend fun getAll(): List<StoreMaster>
+    suspend fun findById(id: Long): StoreMaster?
 }

@@ -34,6 +34,7 @@ class ExposedGameResultRepositoryIntegrationTest : RepositoryTestBase() {
                 tipIncome = 200,
                 otherIncome = 0,
                 totalIncome = 1200,
+                isFinalIncomeRecord = false,
                 createdAt = now,
                 updatedAt = now
             )
@@ -69,6 +70,7 @@ class ExposedGameResultRepositoryIntegrationTest : RepositoryTestBase() {
                 tipIncome = 100,
                 otherIncome = 0,
                 totalIncome = 900,
+                isFinalIncomeRecord = false,
                 createdAt = now,
                 updatedAt = now
             )
@@ -87,6 +89,7 @@ class ExposedGameResultRepositoryIntegrationTest : RepositoryTestBase() {
                 it[storeName] = "Store"
                 it[prefectureCode] = "01"
                 it[email] = "player-${now.toEpochMilliseconds()}@example.com"
+                it[zooId] = (now.toEpochMilliseconds() % 900_000).toInt() + 1
                 it[createdAt] = now
                 it[updatedAt] = now
             } get UsersTable.userId

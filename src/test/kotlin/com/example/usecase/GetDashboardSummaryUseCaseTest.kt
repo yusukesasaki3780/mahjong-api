@@ -92,6 +92,7 @@ class GetDashboardSummaryUseCaseTest {
                     tipIncome = 100,
                     otherIncome = 0,
                     totalIncome = 600,
+                    isFinalIncomeRecord = false,
                     createdAt = Instant.parse("2025-01-01T10:10:00Z"),
                     updatedAt = Instant.parse("2025-01-01T10:10:00Z")
                 ),
@@ -106,6 +107,7 @@ class GetDashboardSummaryUseCaseTest {
                     tipIncome = 0,
                     otherIncome = 0,
                     totalIncome = 400,
+                    isFinalIncomeRecord = false,
                     createdAt = Instant.parse("2025-01-02T10:10:00Z"),
                     updatedAt = Instant.parse("2025-01-02T10:10:00Z")
                 )

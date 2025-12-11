@@ -8,14 +8,21 @@
 
 import com.example.presentation.dto.GameResultResponse
 import com.example.presentation.dto.PatchGameResultRequest
+import com.example.presentation.dto.SimpleBatchDeleteResponse
+import com.example.presentation.dto.SimpleBatchFinishRequest
+import com.example.presentation.dto.SimpleBatchStartRequest
+import com.example.presentation.dto.SimpleBatchStartResponse
 import com.example.presentation.dto.UpsertGameResultRequest
 import com.example.presentation.dto.UserStatsResponse
 import com.example.usecase.game.DeleteGameResultUseCase
+import com.example.usecase.game.DeleteSimpleBatchResultsUseCase
+import com.example.usecase.game.FinishSimpleBatchUseCase
 import com.example.usecase.game.EditGameResultUseCase
 import com.example.usecase.game.GetGameResultUseCase
 import com.example.usecase.game.GetUserStatsUseCase
 import com.example.usecase.game.PatchGameResultUseCase
 import com.example.usecase.game.RecordGameResultUseCase
+import com.example.usecase.game.StartSimpleBatchUseCase
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.call
@@ -26,10 +33,11 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
-import io.ktor.server.routing.post
 import io.ktor.server.routing.patch
+import io.ktor.server.routing.post
 import io.ktor.server.routing.put
 import io.ktor.server.routing.route
+import java.util.UUID
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 
@@ -42,7 +50,10 @@ fun Route.installGameResultRoutes(
     patchGameResultUseCase: PatchGameResultUseCase,
     deleteGameResultUseCase: DeleteGameResultUseCase,
     getGameResultUseCase: GetGameResultUseCase,
-    getUserStatsUseCase: GetUserStatsUseCase
+    getUserStatsUseCase: GetUserStatsUseCase,
+    startSimpleBatchUseCase: StartSimpleBatchUseCase,
+    finishSimpleBatchUseCase: FinishSimpleBatchUseCase,
+    deleteSimpleBatchResultsUseCase: DeleteSimpleBatchResultsUseCase
 ) {
     route("/users/{userId}/results") {
         get {
@@ -93,7 +104,9 @@ fun Route.installGameResultRoutes(
                     tipIncome = request.tipIncome,
                     otherIncome = request.otherIncome,
                     totalIncome = request.totalIncome,
-                    note = request.note
+                    note = request.note,
+                    storeId = request.storeId,
+                    simpleBatchId = request.simpleBatchId
                 )
             )
             call.respond(HttpStatusCode.Created, GameResultResponse.from(created))
@@ -120,7 +133,9 @@ fun Route.installGameResultRoutes(
                     otherIncome = request.otherIncome,
                     totalIncome = request.totalIncome,
                     note = request.note,
-                    createdAt = request.createdAt ?: request.playedAt.atStartOfDayIn(zone)
+                    createdAt = request.createdAt ?: request.playedAt.atStartOfDayIn(zone),
+                    storeId = request.storeId,
+                    simpleBatchId = request.simpleBatchId
                 ),
                 auditContext
             )
@@ -146,7 +161,9 @@ fun Route.installGameResultRoutes(
                     tipIncome = request.tipIncome,
                     otherIncome = request.otherIncome,
                     totalIncome = request.totalIncome,
-                    note = request.note
+                    note = request.note,
+                    storeId = request.storeId,
+                    simpleBatchId = request.simpleBatchId
                 ),
                 auditContext
             )
@@ -160,6 +177,77 @@ fun Route.installGameResultRoutes(
                 ?: return@delete call.respondValidationError("id", "INVALID_RESULT_ID", "resultId は数値で指定してください。")
             val deleted = deleteGameResultUseCase(resultId, auditContext)
             if (deleted) call.respond(HttpStatusCode.NoContent) else call.respond(HttpStatusCode.NotFound)
+        }
+
+        route("/simple-batch") {
+            post("/start") {
+                val userId = call.userIdOrNull() ?: return@post call.respondInvalidUserId()
+                call.requireUserAccess(userId) ?: return@post
+                val request = call.receive<SimpleBatchStartRequest>()
+                val result = startSimpleBatchUseCase(
+                    StartSimpleBatchUseCase.Command(
+                        userId = userId,
+                        storeId = request.storeId,
+                        playedAt = request.playedAt
+                    )
+                )
+                call.respond(HttpStatusCode.Created, SimpleBatchStartResponse.from(result))
+            }
+
+            post("/{simpleBatchId}/finish") {
+                val userId = call.userIdOrNull() ?: return@post call.respondInvalidUserId()
+                call.requireUserAccess(userId) ?: return@post
+                val simpleBatchIdRaw = call.parameters["simpleBatchId"] ?: return@post call.respondValidationError(
+                    field = "simpleBatchId",
+                    code = "REQUIRED",
+                    message = "simpleBatchId を指定してください。"
+                )
+                val simpleBatchId = runCatching { UUID.fromString(simpleBatchIdRaw) }.getOrElse {
+                    return@post call.respondValidationError(
+                        field = "simpleBatchId",
+                        code = "INVALID_SIMPLE_BATCH_ID",
+                        message = "simpleBatchId は UUID 形式で指定してください。"
+                    )
+                }
+                val request = call.receive<SimpleBatchFinishRequest>()
+                val updated = finishSimpleBatchUseCase(
+                    FinishSimpleBatchUseCase.Command(
+                        userId = userId,
+                        simpleBatchId = simpleBatchId,
+                        finalBaseIncome = request.finalBaseIncome,
+                        finalTotalIncome = request.finalTotalIncome
+                    )
+                )
+                call.respond(GameResultResponse.from(updated))
+            }
+
+            delete("/{simpleBatchId}") {
+                val userId = call.userIdOrNull() ?: return@delete call.respondInvalidUserId()
+                call.requireUserAccess(userId) ?: return@delete
+                val simpleBatchIdRaw = call.parameters["simpleBatchId"] ?: return@delete call.respondValidationError(
+                    field = "simpleBatchId",
+                    code = "REQUIRED",
+                    message = "simpleBatchId を指定してください。"
+                )
+                val simpleBatchId = runCatching { UUID.fromString(simpleBatchIdRaw) }.getOrElse {
+                    return@delete call.respondValidationError(
+                        field = "simpleBatchId",
+                        code = "INVALID_SIMPLE_BATCH_ID",
+                        message = "simpleBatchId は UUID 形式で指定してください。"
+                    )
+                }
+                val result = deleteSimpleBatchResultsUseCase(
+                    DeleteSimpleBatchResultsUseCase.Command(
+                        userId = userId,
+                        simpleBatchId = simpleBatchId
+                    )
+                )
+                if (result.deletedCount == 0) {
+                    call.respond(HttpStatusCode.NotFound)
+                } else {
+                    call.respond(SimpleBatchDeleteResponse(deletedCount = result.deletedCount))
+                }
+            }
         }
     }
 }

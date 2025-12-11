@@ -13,6 +13,7 @@ interface UserRepository {
     suspend fun findById(userId: Long): User?
 
     suspend fun findByEmail(email: String): User?
+    suspend fun findByZooId(zooId: Int): User?
 
     suspend fun createUser(user: User): User
 

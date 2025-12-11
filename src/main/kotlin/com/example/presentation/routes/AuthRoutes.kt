@@ -48,6 +48,7 @@ fun Route.installAuthRoutes(
                 storeName = request.storeName,
                 prefectureCode = request.prefectureCode,
                 email = request.email,
+                zooId = request.zooId,
                 password = request.password,
                 passwordConfirm = request.passwordConfirm
             )

@@ -8,6 +8,7 @@
 
 import org.valiktor.Constraint
 import org.valiktor.functions.hasSize
+import org.valiktor.functions.isBetween
 import org.valiktor.functions.matches
 import org.valiktor.validate
 
@@ -26,6 +27,7 @@ internal fun CreateUserUseCase.Command.validateFields() {
         validate(CreateUserUseCase.Command::storeName).hasSize(NAME_MIN, NAME_MAX)
         validate(CreateUserUseCase.Command::prefectureCode).matches(PREFECTURE_CODE_REGEX)
         validate(CreateUserUseCase.Command::email).matches(EMAIL_REGEX)
+        validate(CreateUserUseCase.Command::zooId).isBetween(1, 999_999)
         validate(CreateUserUseCase.Command::password).hasSize(PASSWORD_MIN, PASSWORD_MAX)
         validate(CreateUserUseCase.Command::passwordConfirm).hasSize(PASSWORD_MIN, PASSWORD_MAX)
     }

@@ -5,6 +5,7 @@ package com.example.domain.model
  */
 data class RankingEntry(
     val userId: Long,
+    val zooId: Int,
     val name: String,
     val totalIncome: Long,
     val gameCount: Int,

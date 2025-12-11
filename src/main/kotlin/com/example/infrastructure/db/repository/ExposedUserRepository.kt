@@ -43,6 +43,7 @@ class ExposedUserRepository : UserRepository {
             row[storeName] = user.storeName
             row[prefectureCode] = user.prefectureCode
             row[email] = user.email
+            row[zooId] = user.zooId
             row[createdAt] = user.createdAt
             row[updatedAt] = user.updatedAt
         } get UsersTable.userId
@@ -61,6 +62,7 @@ class ExposedUserRepository : UserRepository {
             row[storeName] = user.storeName
             row[prefectureCode] = user.prefectureCode
             row[email] = user.email
+            row[zooId] = user.zooId
             row[createdAt] = user.createdAt
             row[updatedAt] = user.updatedAt
         }
@@ -101,6 +103,13 @@ class ExposedUserRepository : UserRepository {
             ?.let(::toUser)
     }
 
+    override suspend fun findByZooId(zooIdValue: Int): User? = dbQuery {
+        UsersTable
+            .select { UsersTable.zooId eq zooIdValue }
+            .singleOrNull()
+            ?.let(::toUser)
+    }
+
     override suspend fun findRanking(gameType: GameType, period: StatsPeriod): List<RankingEntry> = dbQuery {
         val baseSum = GameResultsTable.baseIncome.sum()
         val tipSum = GameResultsTable.tipIncome.sum()
@@ -109,18 +118,19 @@ class ExposedUserRepository : UserRepository {
         val avgPlace = GameResultsTable.place.avg()
 
         (UsersTable innerJoin GameResultsTable)
-            .slice(listOf(UsersTable.userId, UsersTable.name, UsersTable.nickname, baseSum, tipSum, otherSum, gameCount, avgPlace))
+            .slice(listOf(UsersTable.userId, UsersTable.name, UsersTable.nickname, UsersTable.zooId, baseSum, tipSum, otherSum, gameCount, avgPlace))
             .select {
                 (GameResultsTable.gameType eq gameType.name) and
                     (GameResultsTable.playedAt greaterEq period.start) and
                     (GameResultsTable.playedAt less period.end)
             }
-            .groupBy(UsersTable.userId, UsersTable.name, UsersTable.nickname)
+            .groupBy(UsersTable.userId, UsersTable.name, UsersTable.nickname, UsersTable.zooId)
             .map { row ->
                 val nickname = row[UsersTable.nickname]
                 val displayName = nickname.takeIf { it.isNotBlank() } ?: row[UsersTable.name]
                 RankingEntry(
                     userId = row[UsersTable.userId],
+                    zooId = row[UsersTable.zooId],
                     name = displayName,
                     totalIncome = (row[baseSum]?.toLong() ?: 0L) +
                         (row[tipSum]?.toLong() ?: 0L) +
@@ -143,6 +153,7 @@ class ExposedUserRepository : UserRepository {
             storeName = row[UsersTable.storeName],
             prefectureCode = row[UsersTable.prefectureCode].trim(),
             email = row[UsersTable.email],
+            zooId = row[UsersTable.zooId],
             createdAt = row[UsersTable.createdAt],
             updatedAt = row[UsersTable.updatedAt]
         )

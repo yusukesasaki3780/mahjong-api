@@ -14,6 +14,7 @@ data class User(
     val storeName: String,
     val prefectureCode: String,
     val email: String,
+    val zooId: Int,
     val createdAt: Instant,
     val updatedAt: Instant
 )

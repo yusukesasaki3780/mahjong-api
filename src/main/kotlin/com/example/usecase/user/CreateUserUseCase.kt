@@ -24,6 +24,7 @@ class CreateUserUseCase(
         val storeName: String,
         val prefectureCode: String,
         val email: String,
+        val zooId: Int,
         val password: String,
         val passwordConfirm: String
     )
@@ -57,6 +58,19 @@ class CreateUserUseCase(
                 message = "このメールアドレスは既に使用されています。"
             )
         }
+        val zooDuplicated = userRepository.findByZooId(command.zooId)
+        if (zooDuplicated != null) {
+            throw DomainValidationException(
+                violations = listOf(
+                    FieldError(
+                        field = "zooId",
+                        code = "ZOO_ID_ALREADY_EXISTS",
+                        message = "このZooIDは既に使用されています。"
+                    )
+                ),
+                message = "このZooIDは既に使用されています。"
+            )
+        }
 
         val now = Clock.System.now()
         val created = userRepository.createUser(
@@ -67,6 +81,7 @@ class CreateUserUseCase(
                 storeName = command.storeName,
                 prefectureCode = command.prefectureCode,
                 email = command.email,
+                zooId = command.zooId,
                 createdAt = now,
                 updatedAt = now
             )

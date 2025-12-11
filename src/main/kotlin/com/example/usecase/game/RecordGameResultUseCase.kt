@@ -1,15 +1,18 @@
-ï»¿package com.example.usecase.game
+package com.example.usecase.game
 
 /**
- * ### ã“ã®ãƒ•ã‚¡ã‚¤ãƒ«ã®å½¹å‰²
- * - ã‚²ãƒ¼ãƒ çµæœã‚’æ–°è¦ç™»éŒ²ã™ã‚‹ã¨ãã®å…¥åŠ›æ¤œè¨¼ã¨ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆç”Ÿæˆã‚’ã¾ã¨ã‚ãŸãƒ¦ãƒ¼ã‚¹ã‚±ãƒ¼ã‚¹ã§ã™ã€‚
- * - ãƒãƒªãƒ‡ãƒ¼ã‚·ãƒ§ãƒ³ãƒ¦ãƒ¼ãƒ†ã‚£ãƒªãƒ†ã‚£ã‚’ä½¿ã£ã¦ãƒ‰ãƒ¡ã‚¤ãƒ³ãƒ«ãƒ¼ãƒ«ã‚’å®ˆã‚Šã¤ã¤ã€Repository ã¸ã®ä¿å­˜ã‚’ä¸€å…ƒåŒ–ã—ã¾ã™ã€‚
+ * ### ‚±‚Ìƒtƒ@ƒCƒ‹‚Ì–ğŠ„
+ * - ƒQ[ƒ€Œ‹‰Ê‚ğV‹K“o˜^‚·‚é‚Æ‚«‚Ì“ü—ÍŒŸØ‚ÆƒIƒuƒWƒFƒNƒg¶¬‚ğ‚Ü‚Æ‚ß‚½ƒ†[ƒXƒP[ƒX‚Å‚·B
+ * - ƒoƒŠƒf[ƒVƒ‡ƒ“ƒ†[ƒeƒBƒŠƒeƒB‚ğg‚Á‚ÄƒhƒƒCƒ“ƒ‹[ƒ‹‚ğç‚è‚Â‚ÂARepository ‚Ö‚Ì•Û‘¶‚ğˆêŒ³‰»‚µ‚Ü‚·B
  */
 
+import com.example.common.error.DomainValidationException
+import com.example.common.error.FieldError
 import com.example.domain.model.GameResult
 import com.example.domain.model.GameType
 import com.example.domain.repository.GameResultRepository
 import com.example.domain.repository.GameSettingsRepository
+import java.util.UUID
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
@@ -21,7 +24,7 @@ import org.valiktor.functions.isIn
 import org.valiktor.validate
 
 /**
- * æ–°ã—ã„ã‚²ãƒ¼ãƒ çµæœã‚’ä¿å­˜ã™ã‚‹ãƒ¦ãƒ¼ã‚¹ã‚±ãƒ¼ã‚¹ã€‚
+ * V‚µ‚¢ƒQ[ƒ€Œ‹‰Ê‚ğ•Û‘¶‚·‚éƒ†[ƒXƒP[ƒXB
  */
 class RecordGameResultUseCase(
     private val repository: GameResultRepository,
@@ -39,7 +42,9 @@ class RecordGameResultUseCase(
         val tipIncome: Long,
         val otherIncome: Long = 0,
         val totalIncome: Long,
-        val note: String? = null
+        val note: String? = null,
+        val storeId: Long? = null,
+        val simpleBatchId: UUID? = null
     )
 
     suspend operator fun invoke(command: Command): GameResult {
@@ -47,9 +52,22 @@ class RecordGameResultUseCase(
         val tipUnit = settings.tipUnit(command.gameType)
         command.validate(tipUnit)
 
+        val isSimpleMode = command.simpleBatchId != null
+        if (isSimpleMode && command.storeId == null) {
+            throw DomainValidationException(
+                listOf(
+                    FieldError(
+                        field = "storeId",
+                        code = "REQUIRED",
+                        message = "storeId is required when simple batch mode is enabled."
+                    )
+                )
+            )
+        }
+
         val now = Clock.System.now()
         val playedAtInstant = command.playedAt.atStartOfDayIn(timeZone)
-        if (command.tipIncome != command.tipCount.toLong() * tipUnit) {
+        if (!isSimpleMode && command.tipIncome != command.tipCount.toLong() * tipUnit) {
             logger.warn(
                 "tipIncome mismatch for user={} expected={} actual={}",
                 command.userId,
@@ -57,15 +75,23 @@ class RecordGameResultUseCase(
                 command.tipIncome
             )
         }
-        ensureTotalIncomeMatches(
-            totalIncome = command.totalIncome,
-            gameType = command.gameType,
-            baseIncome = command.baseIncome,
-            tipIncome = command.tipIncome,
-            otherIncome = command.otherIncome,
-            place = command.place,
-            settings = settings
-        )
+        if (!isSimpleMode) {
+            ensureTotalIncomeMatches(
+                totalIncome = command.totalIncome,
+                gameType = command.gameType,
+                baseIncome = command.baseIncome,
+                tipIncome = command.tipIncome,
+                otherIncome = command.otherIncome,
+                place = command.place,
+                settings = settings
+            )
+        }
+
+        val sanitizedBaseIncome = if (isSimpleMode) 0L else command.baseIncome
+        val sanitizedTipCount = if (isSimpleMode) 0 else command.tipCount
+        val sanitizedTipIncome = if (isSimpleMode) 0L else command.tipIncome
+        val sanitizedOtherIncome = if (isSimpleMode) 0L else command.otherIncome
+        val sanitizedTotalIncome = if (isSimpleMode) 0L else command.totalIncome
 
         val result = GameResult(
             id = null,
@@ -73,12 +99,15 @@ class RecordGameResultUseCase(
             gameType = command.gameType,
             playedAt = playedAtInstant,
             place = command.place,
-            baseIncome = command.baseIncome,
-            tipCount = command.tipCount,
-            tipIncome = command.tipIncome,
-            otherIncome = command.otherIncome,
-            totalIncome = command.totalIncome,
+            baseIncome = sanitizedBaseIncome,
+            tipCount = sanitizedTipCount,
+            tipIncome = sanitizedTipIncome,
+            otherIncome = sanitizedOtherIncome,
+            totalIncome = sanitizedTotalIncome,
             note = command.note,
+            storeId = command.storeId,
+            simpleBatchId = command.simpleBatchId,
+            isFinalIncomeRecord = false,
             createdAt = now,
             updatedAt = now
         )

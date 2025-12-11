@@ -15,6 +15,7 @@ class RegisterRequestSerializationTest {
             storeName = "麻雀ZOO 新宿本店",
             prefectureCode = "13",
             email = "sasaki@example.com",
+            zooId = 1234,
             password = "SecurePass123!",
             passwordConfirm = "SecurePass123!"
         )

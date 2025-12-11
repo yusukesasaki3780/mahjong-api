@@ -16,6 +16,9 @@ import com.example.usecase.game.GetRankingUseCase
 import com.example.usecase.game.GetUserStatsUseCase
 import com.example.usecase.game.PatchGameResultUseCase
 import com.example.usecase.game.RecordGameResultUseCase
+import com.example.usecase.game.StartSimpleBatchUseCase
+import com.example.usecase.game.FinishSimpleBatchUseCase
+import com.example.usecase.game.DeleteSimpleBatchResultsUseCase
 import com.example.usecase.prefecture.GetPrefectureListUseCase
 import com.example.usecase.salary.CalculateMonthlySalaryUseCase
 import com.example.usecase.settings.CreateSpecialHourlyWageUseCase
@@ -91,6 +94,9 @@ abstract class RoutesTestBase {
     protected val deleteGameResultUseCase: DeleteGameResultUseCase = mockk(relaxed = true)
     protected val getGameResultUseCase: GetGameResultUseCase = mockk(relaxed = true)
     protected val getUserStatsUseCase: GetUserStatsUseCase = mockk(relaxed = true)
+    protected val startSimpleBatchUseCase: StartSimpleBatchUseCase = mockk(relaxed = true)
+    protected val finishSimpleBatchUseCase: FinishSimpleBatchUseCase = mockk(relaxed = true)
+    protected val deleteSimpleBatchResultsUseCase: DeleteSimpleBatchResultsUseCase = mockk(relaxed = true)
     protected val getRankingUseCase: GetRankingUseCase = mockk(relaxed = true)
 
     protected val registerShiftUseCase: RegisterShiftUseCase = mockk(relaxed = true)
@@ -150,6 +156,9 @@ abstract class RoutesTestBase {
                 deleteGameResultUseCase = deleteGameResultUseCase,
                 getGameResultUseCase = getGameResultUseCase,
                 getUserStatsUseCase = getUserStatsUseCase,
+                startSimpleBatchUseCase = startSimpleBatchUseCase,
+                finishSimpleBatchUseCase = finishSimpleBatchUseCase,
+                deleteSimpleBatchResultsUseCase = deleteSimpleBatchResultsUseCase,
                 getRankingUseCase = getRankingUseCase,
                 registerShiftUseCase = registerShiftUseCase,
                 editShiftUseCase = editShiftUseCase,

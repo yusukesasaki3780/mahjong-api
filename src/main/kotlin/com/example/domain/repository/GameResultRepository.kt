@@ -2,6 +2,7 @@ package com.example.domain.repository
 
 import com.example.domain.model.GameResult
 import com.example.domain.model.StatsRange
+import java.util.UUID
 
 /**
  * ゲーム結果の CRUD と統計情報取得を担当するリポジトリインターフェース。
@@ -40,4 +41,13 @@ interface GameResultRepository {
      * 指定範囲内で得た総収入を返す。
      */
     suspend fun getTotalIncome(userId: Long, range: StatsRange): Long
+
+    suspend fun insertGameResults(results: List<GameResult>): List<GameResult>
+
+    suspend fun findLatestBySimpleBatch(userId: Long, simpleBatchId: UUID): GameResult?
+
+    /**
+     * simpleBatchId に紐づく結果をまとめて削除し、削除件数を返す。
+     */
+    suspend fun deleteBySimpleBatch(userId: Long, simpleBatchId: UUID): Int
 }

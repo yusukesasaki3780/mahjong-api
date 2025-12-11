@@ -45,6 +45,7 @@ class AuthRoutesTest : RoutesTestBase() {
                         storeName = "Store",
                         prefectureCode = "01",
                         email = "alice@example.com",
+                        zooId = 1234,
                         password = "SecretPass123!",
                         passwordConfirm = "SecretPass123!"
                     )
@@ -78,6 +79,7 @@ class AuthRoutesTest : RoutesTestBase() {
                         storeName = "Store",
                         prefectureCode = "01",
                         email = "alice@example.com",
+                        zooId = 1234,
                         password = "SecretPass123!",
                         passwordConfirm = "Mismatch123!"
                     )
