@@ -4,6 +4,7 @@ import at.favre.lib.crypto.bcrypt.BCrypt
 import com.example.common.error.DomainValidationException
 import com.example.common.error.FieldError
 import com.example.domain.model.User
+import com.example.domain.repository.StoreMasterRepository
 import com.example.domain.repository.UserCredentialRepository
 import com.example.domain.repository.UserRepository
 import com.example.usecase.settings.CreateDefaultGameSettingsUseCase
@@ -15,13 +16,14 @@ import kotlinx.datetime.Clock
 class CreateUserUseCase(
     private val userRepository: UserRepository,
     private val credentialRepository: UserCredentialRepository,
+    private val storeMasterRepository: StoreMasterRepository,
     private val createDefaultGameSettingsUseCase: CreateDefaultGameSettingsUseCase
 ) {
 
     data class Command(
         val name: String,
         val nickname: String,
-        val storeName: String,
+        val storeId: Long,
         val prefectureCode: String,
         val email: String,
         val zooId: Int,
@@ -72,16 +74,28 @@ class CreateUserUseCase(
             )
         }
 
+        val store = storeMasterRepository.findById(command.storeId) ?: throw DomainValidationException(
+            violations = listOf(
+                FieldError(
+                    field = "storeId",
+                    code = "STORE_NOT_FOUND",
+                    message = "選択した店舗が存在しません"
+                )
+            ),
+            message = "Store not found"
+        )
+
         val now = Clock.System.now()
         val created = userRepository.createUser(
             User(
                 id = null,
                 name = command.name,
                 nickname = command.nickname,
-                storeName = command.storeName,
+                storeName = store.storeName,
                 prefectureCode = command.prefectureCode,
                 email = command.email,
                 zooId = command.zooId,
+                isAdmin = false,
                 createdAt = now,
                 updatedAt = now
             )

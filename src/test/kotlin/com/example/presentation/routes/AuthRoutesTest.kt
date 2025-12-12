@@ -42,7 +42,7 @@ class AuthRoutesTest : RoutesTestBase() {
                     RegisterRequest(
                         name = "Alice",
                         nickname = "ali",
-                        storeName = "Store",
+                        storeId = 1,
                         prefectureCode = "01",
                         email = "alice@example.com",
                         zooId = 1234,
@@ -76,7 +76,7 @@ class AuthRoutesTest : RoutesTestBase() {
                     RegisterRequest(
                         name = "Alice",
                         nickname = "ali",
-                        storeName = "Store",
+                        storeId = 1,
                         prefectureCode = "01",
                         email = "alice@example.com",
                         zooId = 1234,

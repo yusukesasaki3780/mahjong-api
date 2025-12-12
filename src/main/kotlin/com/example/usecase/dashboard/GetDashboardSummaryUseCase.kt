@@ -44,6 +44,8 @@ class GetDashboardSummaryUseCase(
     data class SalarySummary(
         val baseWageTotal: Double,
         val nightExtraTotal: Double,
+        val specialAllowanceRegularTotal: Double,
+        val specialAllowanceLateNightTotal: Double,
         val specialAllowanceTotal: Double,
         val specialAllowances: List<SpecialAllowanceSummary>,
         val transportTotal: Long,
@@ -57,7 +59,8 @@ class GetDashboardSummaryUseCase(
     data class SpecialAllowanceSummary(
         val type: String,
         val label: String,
-        val unitPrice: Int,
+        val unitPrice: Double,
+        val rate: Double? = null,
         val hours: Double,
         val amount: Double,
         val specialHourlyWageId: Long? = null
@@ -100,20 +103,23 @@ class GetDashboardSummaryUseCase(
                 totalNightMinutes = minutes.nightMinutes,
                 totalShifts = shifts.size
             ),
-            salary = SalarySummary(
-                baseWageTotal = salary.baseWageTotal,
-                nightExtraTotal = salary.nightExtraTotal,
-                specialAllowanceTotal = salary.specialAllowanceTotal,
-                specialAllowances = salary.specialAllowances.map {
-                    SpecialAllowanceSummary(
-                        type = it.type,
-                        label = it.label,
-                        unitPrice = it.unitPrice,
-                        hours = it.hours,
-                        amount = it.amount,
-                        specialHourlyWageId = it.specialHourlyWageId
-                    )
-                },
+                salary = SalarySummary(
+                    baseWageTotal = salary.baseWageTotal,
+                    nightExtraTotal = salary.nightExtraTotal,
+                    specialAllowanceRegularTotal = salary.specialAllowanceRegularTotal,
+                    specialAllowanceLateNightTotal = salary.specialAllowanceLateNightTotal,
+                    specialAllowanceTotal = salary.specialAllowanceTotal,
+                    specialAllowances = salary.specialAllowances.map {
+                        SpecialAllowanceSummary(
+                            type = it.type,
+                            label = it.label,
+                            unitPrice = it.unitPrice,
+                            rate = it.rate,
+                            hours = it.hours,
+                            amount = it.amount,
+                            specialHourlyWageId = it.specialHourlyWageId
+                        )
+                    },
                 transportTotal = salary.transportTotal,
                 gameIncomeTotal = salary.gameIncomeTotal,
                 advanceAmount = salary.advanceAmount,

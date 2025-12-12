@@ -12,7 +12,9 @@ data class UpdateUserRequest(
     val nickname: String,
     val storeName: String,
     val prefectureCode: String,
-    val email: String
+    val email: String,
+    val currentPassword: String? = null,
+    val newPassword: String? = null
 )
 
 /**
@@ -24,7 +26,9 @@ data class PatchUserRequest(
     val nickname: String? = null,
     val storeName: String? = null,
     val prefectureCode: String? = null,
-    val email: String? = null
+    val email: String? = null,
+    val currentPassword: String? = null,
+    val newPassword: String? = null
 )
 
 @Serializable
@@ -36,6 +40,7 @@ data class UserResponse(
     val prefectureCode: String,
     val email: String,
     val zooId: Int,
+    val isAdmin: Boolean,
     val createdAt: String,
     val updatedAt: String
 ) {
@@ -48,8 +53,38 @@ data class UserResponse(
             prefectureCode = user.prefectureCode,
             email = user.email,
             zooId = user.zooId,
+            isAdmin = user.isAdmin,
             createdAt = user.createdAt.toString(),
             updatedAt = user.updatedAt.toString()
         )
     }
 }
+
+@Serializable
+data class AdminUserSummaryResponse(
+    val id: Long,
+    val name: String,
+    val nickname: String,
+    val email: String,
+    val storeName: String
+) {
+    companion object {
+        fun from(user: User) = AdminUserSummaryResponse(
+            id = user.id!!,
+            name = user.name,
+            nickname = user.nickname,
+            email = user.email,
+            storeName = user.storeName
+        )
+    }
+}
+
+@Serializable
+data class AdminPasswordResetRequest(
+    val newPassword: String
+)
+
+@Serializable
+data class AdminPasswordResetResponse(
+    val status: String = "ok"
+)

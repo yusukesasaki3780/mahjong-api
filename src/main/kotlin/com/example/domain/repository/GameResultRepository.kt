@@ -50,4 +50,9 @@ interface GameResultRepository {
      * simpleBatchId に紐づく結果をまとめて削除し、削除件数を返す。
      */
     suspend fun deleteBySimpleBatch(userId: Long, simpleBatchId: UUID): Int
+
+    /**
+     * 指定ユーザーの全ゲーム結果を削除する。
+     */
+    suspend fun deleteAllForUser(userId: Long): Int
 }

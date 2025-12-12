@@ -108,6 +108,7 @@ class ExposedShiftRepositoryIntegrationTest : RepositoryTestBase() {
                 it[prefectureCode] = "01"
                 it[email] = "shift-${now.toEpochMilliseconds()}@example.com"
                 it[zooId] = (now.toEpochMilliseconds() % 900_000).toInt() + 1
+                it[UsersTable.isAdmin] = false
                 it[createdAt] = now
                 it[updatedAt] = now
             } get UsersTable.userId

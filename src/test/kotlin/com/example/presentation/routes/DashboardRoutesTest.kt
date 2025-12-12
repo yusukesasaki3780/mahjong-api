@@ -29,23 +29,27 @@ class DashboardRoutesTest : RoutesTestBase() {
                 salary = GetDashboardSummaryUseCase.SalarySummary(
                     baseWageTotal = 180000.0,
                     nightExtraTotal = 20000.0,
+                    specialAllowanceRegularTotal = 3000.0,
+                    specialAllowanceLateNightTotal = 2000.0,
                     specialAllowanceTotal = 5000.0,
                     specialAllowances = listOf(
                         GetDashboardSummaryUseCase.SpecialAllowanceSummary(
-                            type = "special_hourly_wage",
+                            type = "special_regular",
                             label = "年末年始",
-                            unitPrice = 1500,
+                            unitPrice = 1500.0,
+                            rate = null,
                             hours = 2.0,
                             amount = 3000.0,
                             specialHourlyWageId = 1
                         ),
                         GetDashboardSummaryUseCase.SpecialAllowanceSummary(
-                            type = "night_bonus",
-                            label = "深夜給（特別手当）",
-                            unitPrice = 1875,
+                            type = "special_late_night",
+                            label = "特別深夜手当",
+                            unitPrice = 1875.0,
+                            rate = 0.25,
                             hours = 1.6,
                             amount = 2000.0,
-                            specialHourlyWageId = null
+                            specialHourlyWageId = 2
                         )
                     ),
                     transportTotal = 500,
@@ -72,7 +76,9 @@ class DashboardRoutesTest : RoutesTestBase() {
         assertEquals(10, body.workShiftCount)
         assertEquals(20000.0, body.salaryNightExtraTotal)
         assertEquals(5000.0, body.salarySpecialAllowanceTotal)
-        assertEquals(2, body.salarySpecialAllowances.size)
+        assertEquals(3000.0, body.salarySpecialAllowance.regular)
+        assertEquals(2000.0, body.salarySpecialAllowance.lateNight)
+        assertEquals(2, body.salarySpecialAllowanceBreakdown.size)
         assertEquals(2500.0, body.salaryAdvanceAmount)
         assertEquals(20, body.totalGames)
     }

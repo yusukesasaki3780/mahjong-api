@@ -10,6 +10,7 @@ import com.example.common.error.DomainValidationException
 import com.example.common.error.FieldError
 import com.example.domain.model.AuditContext
 import com.example.domain.model.User
+import com.example.domain.repository.UserCredentialRepository
 import com.example.domain.repository.UserPatch
 import com.example.domain.repository.UserRepository
 import com.example.infrastructure.logging.AuditLogger
@@ -17,6 +18,7 @@ import kotlinx.datetime.Clock
 
 class PatchUserUseCase(
     private val userRepository: UserRepository,
+    private val credentialRepository: UserCredentialRepository,
     private val auditLogger: AuditLogger
 ) {
 
@@ -26,7 +28,9 @@ class PatchUserUseCase(
         val nickname: String? = null,
         val storeName: String? = null,
         val prefectureCode: String? = null,
-        val email: String? = null
+        val email: String? = null,
+        val currentPassword: String? = null,
+        val newPassword: String? = null
     )
 
     suspend operator fun invoke(command: Command, auditContext: AuditContext): User {
@@ -51,12 +55,20 @@ class PatchUserUseCase(
             }
         }
 
+        changePasswordIfRequested(
+            userId = command.userId,
+            credentialRepository = credentialRepository,
+            currentPassword = command.currentPassword,
+            newPassword = command.newPassword
+        )
+
         val merged = existing.copy(
             name = command.name ?: existing.name,
             nickname = command.nickname ?: existing.nickname,
             storeName = command.storeName ?: existing.storeName,
             prefectureCode = command.prefectureCode ?: existing.prefectureCode,
             email = command.email ?: existing.email,
+            isAdmin = existing.isAdmin,
             updatedAt = Clock.System.now()
         )
 

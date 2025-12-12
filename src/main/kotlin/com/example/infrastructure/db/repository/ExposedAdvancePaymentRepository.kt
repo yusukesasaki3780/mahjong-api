@@ -10,6 +10,7 @@ import kotlinx.datetime.toKotlinInstant
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
@@ -55,6 +56,10 @@ class ExposedAdvancePaymentRepository : AdvancePaymentRepository {
             }
             .single()
             .let(::toAdvancePayment)
+    }
+
+    override suspend fun deleteAllForUser(userId: Long): Int = dbQuery {
+        AdvancePaymentsTable.deleteWhere { AdvancePaymentsTable.userId eq userId }
     }
 
     private fun toAdvancePayment(row: ResultRow): AdvancePayment =

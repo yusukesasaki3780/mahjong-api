@@ -16,7 +16,8 @@ data class SalaryResponse(
     val baseWageTotal: Double,
     val nightExtraTotal: Double,
     val specialAllowanceTotal: Double,
-    val specialAllowances: List<SpecialAllowanceResponse>,
+    val specialAllowance: SpecialAllowanceAggregateResponse,
+    val specialAllowanceBreakdown: List<SpecialAllowanceBreakdownResponse>,
     val gameIncomeTotal: Long,
     val transportTotal: Long,
     val advanceAmount: Double,
@@ -34,11 +35,17 @@ data class SalaryResponse(
             baseWageTotal = result.baseWageTotal,
             nightExtraTotal = result.nightExtraTotal,
             specialAllowanceTotal = result.specialAllowanceTotal,
-            specialAllowances = result.specialAllowances.map {
-                SpecialAllowanceResponse(
+            specialAllowance = SpecialAllowanceAggregateResponse(
+                regular = result.specialAllowanceRegularTotal,
+                lateNight = result.specialAllowanceLateNightTotal,
+                total = result.specialAllowanceTotal
+            ),
+            specialAllowanceBreakdown = result.specialAllowances.map {
+                SpecialAllowanceBreakdownResponse(
                     type = it.type,
                     label = it.label,
-                    unitPrice = it.unitPrice,
+                    unit = it.unitPrice,
+                    rate = it.rate,
                     hours = it.hours,
                     amount = it.amount,
                     specialHourlyWageId = it.specialHourlyWageId
@@ -55,10 +62,18 @@ data class SalaryResponse(
 }
 
 @Serializable
-data class SpecialAllowanceResponse(
+    data class SpecialAllowanceAggregateResponse(
+        val regular: Double,
+        val lateNight: Double,
+        val total: Double
+    )
+
+@Serializable
+data class SpecialAllowanceBreakdownResponse(
     val type: String,
     val label: String,
-    val unitPrice: Int,
+    val unit: Double,
+    val rate: Double? = null,
     val hours: Double,
     val amount: Double,
     val specialHourlyWageId: Long? = null

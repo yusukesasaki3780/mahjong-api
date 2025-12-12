@@ -10,7 +10,7 @@ import kotlinx.serialization.Serializable
 data class RegisterRequest(
     val name: String,
     val nickname: String,
-    val storeName: String,
+    val storeId: Long,
     val prefectureCode: String,
     val email: String,
     val zooId: Int,

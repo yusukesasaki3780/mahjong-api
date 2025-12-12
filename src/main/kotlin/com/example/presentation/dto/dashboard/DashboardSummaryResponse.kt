@@ -16,7 +16,8 @@ data class DashboardSummaryResponse(
     val salaryBaseWageTotal: Double,
     val salaryNightExtraTotal: Double,
     val salarySpecialAllowanceTotal: Double,
-    val salarySpecialAllowances: List<DashboardSpecialAllowanceResponse>,
+    val salarySpecialAllowance: DashboardSpecialAllowanceAggregateResponse,
+    val salarySpecialAllowanceBreakdown: List<DashboardSpecialAllowanceResponse>,
     val salaryTransportTotal: Long,
     val salaryGameIncomeTotal: Long,
     val salaryAdvanceAmount: Double,
@@ -43,11 +44,17 @@ data class DashboardSummaryResponse(
                 salaryBaseWageTotal = result.salary.baseWageTotal,
                 salaryNightExtraTotal = result.salary.nightExtraTotal,
                 salarySpecialAllowanceTotal = result.salary.specialAllowanceTotal,
-                salarySpecialAllowances = result.salary.specialAllowances.map {
+                salarySpecialAllowance = DashboardSpecialAllowanceAggregateResponse(
+                    regular = result.salary.specialAllowanceRegularTotal,
+                    lateNight = result.salary.specialAllowanceLateNightTotal,
+                    total = result.salary.specialAllowanceTotal
+                ),
+                salarySpecialAllowanceBreakdown = result.salary.specialAllowances.map {
                     DashboardSpecialAllowanceResponse(
                         type = it.type,
                         label = it.label,
-                        unitPrice = it.unitPrice,
+                        unit = it.unitPrice,
+                        rate = it.rate,
                         hours = it.hours,
                         amount = it.amount,
                         specialHourlyWageId = it.specialHourlyWageId
@@ -72,10 +79,18 @@ data class DashboardSummaryResponse(
 }
 
 @Serializable
+data class DashboardSpecialAllowanceAggregateResponse(
+    val regular: Double,
+    val lateNight: Double,
+    val total: Double
+)
+
+@Serializable
 data class DashboardSpecialAllowanceResponse(
     val type: String,
     val label: String,
-    val unitPrice: Int,
+    val unit: Double,
+    val rate: Double? = null,
     val hours: Double,
     val amount: Double,
     val specialHourlyWageId: Long? = null

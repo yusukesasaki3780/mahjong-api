@@ -2,6 +2,7 @@ package com.example.usecase
 
 import com.example.TestFixtures
 import com.example.common.error.DomainValidationException
+import com.example.domain.repository.StoreMasterRepository
 import com.example.domain.repository.UserCredentialRepository
 import com.example.domain.repository.UserRepository
 import com.example.usecase.settings.CreateDefaultGameSettingsUseCase
@@ -19,14 +20,21 @@ class CreateUserUseCaseTest {
 
     private val userRepository = mockk<UserRepository>()
     private val credentialRepository = mockk<UserCredentialRepository>()
+    private val storeRepository = mockk<StoreMasterRepository>()
     private val createDefaultSettingsUseCase = mockk<CreateDefaultGameSettingsUseCase>(relaxed = true)
-    private val useCase = CreateUserUseCase(userRepository, credentialRepository, createDefaultSettingsUseCase)
+    private val useCase = CreateUserUseCase(
+        userRepository,
+        credentialRepository,
+        storeRepository,
+        createDefaultSettingsUseCase
+    )
 
     @Test
     fun `creates user when command valid`() = runTest {
         val created = TestFixtures.user()
         coEvery { userRepository.findByEmail("alice@example.com") } returns null
         coEvery { userRepository.findByZooId(1234) } returns null
+        coEvery { storeRepository.findById(1) } returns TestFixtures.store(id = 1, name = "Mahjong")
         coEvery { userRepository.createUser(any()) } returns created
         coEvery { credentialRepository.createCredentials(created.id!!, "alice@example.com", any()) } returns Unit
         coEvery { createDefaultSettingsUseCase(created.id!!) } returns Unit
@@ -35,7 +43,7 @@ class CreateUserUseCaseTest {
             CreateUserUseCase.Command(
                 name = "Alice",
                 nickname = "ali",
-                storeName = "Mahjong",
+                storeId = 1,
                 prefectureCode = "13",
                 email = "alice@example.com",
                 zooId = 1234,
@@ -59,7 +67,7 @@ class CreateUserUseCaseTest {
                 CreateUserUseCase.Command(
                     name = "Alice",
                     nickname = "ali",
-                    storeName = "Mahjong",
+                    storeId = 1,
                     prefectureCode = "ABC",
                     email = "alice@example.com",
                     zooId = 1234,
@@ -77,7 +85,7 @@ class CreateUserUseCaseTest {
                 CreateUserUseCase.Command(
                     name = "Alice",
                     nickname = "ali",
-                    storeName = "Mahjong",
+                    storeId = 1,
                     prefectureCode = "13",
                     email = "alice@example.com",
                     zooId = 1234,
@@ -97,7 +105,7 @@ class CreateUserUseCaseTest {
                 CreateUserUseCase.Command(
                     name = "Alice",
                     nickname = "ali",
-                    storeName = "Mahjong",
+                    storeId = 1,
                     prefectureCode = "13",
                     email = "alice@example.com",
                     zooId = 1234,
@@ -117,7 +125,7 @@ class CreateUserUseCaseTest {
                 CreateUserUseCase.Command(
                     name = "Alice",
                     nickname = "ali",
-                    storeName = "Mahjong",
+                    storeId = 1,
                     prefectureCode = "13",
                     email = "alice@example.com",
                     zooId = 1234,
@@ -137,7 +145,7 @@ class CreateUserUseCaseTest {
                 CreateUserUseCase.Command(
                     name = "Alice",
                     nickname = "ali",
-                    storeName = "Mahjong",
+                    storeId = 1,
                     prefectureCode = "13",
                     email = "alice@example.com",
                     zooId = 1234,

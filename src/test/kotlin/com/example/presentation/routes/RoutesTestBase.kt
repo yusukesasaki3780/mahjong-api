@@ -13,6 +13,7 @@ import com.example.usecase.game.DeleteGameResultUseCase
 import com.example.usecase.game.EditGameResultUseCase
 import com.example.usecase.game.GetGameResultUseCase
 import com.example.usecase.game.GetRankingUseCase
+import com.example.usecase.game.GetMyRankingUseCase
 import com.example.usecase.game.GetUserStatsUseCase
 import com.example.usecase.game.PatchGameResultUseCase
 import com.example.usecase.game.RecordGameResultUseCase
@@ -36,9 +37,13 @@ import com.example.usecase.shift.GetShiftStatsUseCase
 import com.example.usecase.shift.PatchShiftUseCase
 import com.example.usecase.shift.RegisterShiftUseCase
 import com.example.usecase.store.GetStoreListUseCase
+import com.example.usecase.user.AdminDeleteUserUseCase
+import com.example.usecase.user.AdminResetUserPasswordUseCase
 import com.example.usecase.user.CreateUserUseCase
+import com.example.usecase.user.DeleteMyAccountUseCase
 import com.example.usecase.user.DeleteUserUseCase
 import com.example.usecase.user.GetUserUseCase
+import com.example.usecase.user.ListGeneralUsersUseCase
 import com.example.usecase.user.PatchUserUseCase
 import com.example.usecase.user.UpdateUserUseCase
 import io.ktor.client.request.HttpRequestBuilder
@@ -80,6 +85,10 @@ abstract class RoutesTestBase {
     protected val updateUserUseCase: UpdateUserUseCase = mockk(relaxed = true)
     protected val patchUserUseCase: PatchUserUseCase = mockk(relaxed = true)
     protected val deleteUserUseCase: DeleteUserUseCase = mockk(relaxed = true)
+    protected val deleteMyAccountUseCase: DeleteMyAccountUseCase = mockk(relaxed = true)
+    protected val listGeneralUsersUseCase: ListGeneralUsersUseCase = mockk(relaxed = true)
+    protected val adminDeleteUserUseCase: AdminDeleteUserUseCase = mockk(relaxed = true)
+    protected val adminResetUserPasswordUseCase: AdminResetUserPasswordUseCase = mockk(relaxed = true)
 
     protected val getGameSettingsUseCase: GetGameSettingsUseCase = mockk(relaxed = true)
     protected val updateGameSettingsUseCase: UpdateGameSettingsUseCase = mockk(relaxed = true)
@@ -98,6 +107,7 @@ abstract class RoutesTestBase {
     protected val finishSimpleBatchUseCase: FinishSimpleBatchUseCase = mockk(relaxed = true)
     protected val deleteSimpleBatchResultsUseCase: DeleteSimpleBatchResultsUseCase = mockk(relaxed = true)
     protected val getRankingUseCase: GetRankingUseCase = mockk(relaxed = true)
+    protected val getMyRankingUseCase: GetMyRankingUseCase = mockk(relaxed = true)
 
     protected val registerShiftUseCase: RegisterShiftUseCase = mockk(relaxed = true)
     protected val editShiftUseCase: EditShiftUseCase = mockk(relaxed = true)
@@ -144,6 +154,10 @@ abstract class RoutesTestBase {
                 updateUserUseCase = updateUserUseCase,
                 patchUserUseCase = patchUserUseCase,
                 deleteUserUseCase = deleteUserUseCase,
+                deleteMyAccountUseCase = deleteMyAccountUseCase,
+                listGeneralUsersUseCase = listGeneralUsersUseCase,
+                adminDeleteUserUseCase = adminDeleteUserUseCase,
+                adminResetUserPasswordUseCase = adminResetUserPasswordUseCase,
                 getGameSettingsUseCase = getGameSettingsUseCase,
                 updateGameSettingsUseCase = updateGameSettingsUseCase,
                 patchGameSettingsUseCase = patchGameSettingsUseCase,
@@ -160,6 +174,7 @@ abstract class RoutesTestBase {
                 finishSimpleBatchUseCase = finishSimpleBatchUseCase,
                 deleteSimpleBatchResultsUseCase = deleteSimpleBatchResultsUseCase,
                 getRankingUseCase = getRankingUseCase,
+                getMyRankingUseCase = getMyRankingUseCase,
                 registerShiftUseCase = registerShiftUseCase,
                 editShiftUseCase = editShiftUseCase,
                 patchShiftUseCase = patchShiftUseCase,

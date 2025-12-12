@@ -9,6 +9,7 @@
 import com.example.presentation.dto.PatchUserRequest
 import com.example.presentation.dto.UpdateUserRequest
 import com.example.presentation.dto.UserResponse
+import com.example.usecase.user.DeleteMyAccountUseCase
 import com.example.usecase.user.DeleteUserUseCase
 import com.example.usecase.user.GetUserUseCase
 import com.example.usecase.user.PatchUserUseCase
@@ -31,7 +32,8 @@ fun Route.installUserRoutes(
     getUserUseCase: GetUserUseCase,
     updateUserUseCase: UpdateUserUseCase,
     patchUserUseCase: PatchUserUseCase,
-    deleteUserUseCase: DeleteUserUseCase
+    deleteUserUseCase: DeleteUserUseCase,
+    deleteMyAccountUseCase: DeleteMyAccountUseCase
 ) {
     route("/users/{userId}") {
         get {
@@ -52,7 +54,9 @@ fun Route.installUserRoutes(
                     nickname = request.nickname,
                     storeName = request.storeName,
                     prefectureCode = request.prefectureCode,
-                    email = request.email
+                    email = request.email,
+                    currentPassword = request.currentPassword,
+                    newPassword = request.newPassword
                 ),
                 auditContext
             )
@@ -70,7 +74,9 @@ fun Route.installUserRoutes(
                     nickname = request.nickname,
                     storeName = request.storeName,
                     prefectureCode = request.prefectureCode,
-                    email = request.email
+                    email = request.email,
+                    currentPassword = request.currentPassword,
+                    newPassword = request.newPassword
                 ),
                 auditContext
             )
@@ -83,6 +89,13 @@ fun Route.installUserRoutes(
             val deleted = deleteUserUseCase(userId, auditContext)
             if (deleted) call.respond(HttpStatusCode.NoContent) else call.respond(HttpStatusCode.NotFound)
         }
+    }
+
+    delete("/users/me") {
+        val actorId = call.userId()
+        val auditContext = call.requireAuditContext(actorId) ?: return@delete
+        val deleted = deleteMyAccountUseCase(actorId, auditContext)
+        if (deleted) call.respond(HttpStatusCode.NoContent) else call.respond(HttpStatusCode.NotFound)
     }
 }
 

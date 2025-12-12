@@ -152,6 +152,10 @@ class ExposedShiftRepository : ShiftRepository {
         return shift.copy(breaks = breaks)
     }
 
+    override suspend fun deleteAllForUser(userId: Long): Int = dbQuery {
+        ShiftsTable.deleteWhere { ShiftsTable.userId eq userId }
+    }
+
     private fun ensureShiftOwnedByUser(shiftId: Long, userId: Long) {
         val exists = ShiftsTable
             .select { (ShiftsTable.id eq shiftId) and (ShiftsTable.userId eq userId) }

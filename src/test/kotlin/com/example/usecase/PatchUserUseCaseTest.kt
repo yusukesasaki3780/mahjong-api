@@ -1,6 +1,7 @@
 package com.example.usecase
 
 import com.example.domain.model.User
+import com.example.domain.repository.UserCredentialRepository
 import com.example.domain.repository.UserRepository
 import com.example.usecase.user.PatchUserUseCase
 import com.example.usecase.TestAuditSupport
@@ -17,7 +18,8 @@ import kotlin.test.assertFailsWith
 class PatchUserUseCaseTest {
 
     private val repository = mockk<UserRepository>()
-    private val useCase = PatchUserUseCase(repository, TestAuditSupport.auditLogger)
+    private val credentialRepository = mockk<UserCredentialRepository>()
+    private val useCase = PatchUserUseCase(repository, credentialRepository, TestAuditSupport.auditLogger)
 
     @Test
     fun `updates only provided fields`() = runTest {
@@ -66,7 +68,8 @@ class PatchUserUseCaseTest {
         store: String = "Store",
         prefecture: String = "01",
         email: String = "user$id@example.com",
-        zooId: Int = (100000 + id).toInt()
+        zooId: Int = (100000 + id).toInt(),
+        isAdmin: Boolean = false
     ): User = User(
         id = id,
         name = name,
@@ -75,6 +78,7 @@ class PatchUserUseCaseTest {
         prefectureCode = prefecture,
         email = email,
         zooId = zooId,
+        isAdmin = isAdmin,
         createdAt = Clock.System.now(),
         updatedAt = Clock.System.now()
     )

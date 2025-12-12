@@ -45,7 +45,7 @@ fun Route.installAuthRoutes(
             CreateUserUseCase.Command(
                 name = request.name,
                 nickname = request.nickname,
-                storeName = request.storeName,
+                storeId = request.storeId,
                 prefectureCode = request.prefectureCode,
                 email = request.email,
                 zooId = request.zooId,

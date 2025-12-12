@@ -23,6 +23,8 @@ interface UserRepository {
 
     suspend fun deleteUser(userId: Long): Boolean
 
+    suspend fun listNonAdminUsers(): List<User>
+
     /**
      * Returns aggregated ranking entries filtered by game type and period.
      */

@@ -12,7 +12,7 @@ class RegisterRequestSerializationTest {
         val request = RegisterRequest(
             name = "佐々木由紀子",
             nickname = "ゆっこ",
-            storeName = "麻雀ZOO 新宿本店",
+            storeId = 10,
             prefectureCode = "13",
             email = "sasaki@example.com",
             zooId = 1234,

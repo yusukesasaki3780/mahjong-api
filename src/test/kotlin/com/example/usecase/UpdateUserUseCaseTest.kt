@@ -1,6 +1,7 @@
 package com.example.usecase
 
 import com.example.TestFixtures
+import com.example.domain.repository.UserCredentialRepository
 import com.example.domain.repository.UserRepository
 import com.example.usecase.user.UpdateUserUseCase
 import com.example.usecase.TestAuditSupport
@@ -16,7 +17,8 @@ import kotlin.test.assertFailsWith
 class UpdateUserUseCaseTest {
 
     private val repository = mockk<UserRepository>()
-    private val useCase = UpdateUserUseCase(repository, TestAuditSupport.auditLogger)
+    private val credentialRepository = mockk<UserCredentialRepository>()
+    private val useCase = UpdateUserUseCase(repository, credentialRepository, TestAuditSupport.auditLogger)
 
     @Test
     fun `updates user when valid`() = runTest {

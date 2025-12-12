@@ -15,6 +15,7 @@ import com.example.usecase.game.DeleteSimpleBatchResultsUseCase
 import com.example.usecase.game.EditGameResultUseCase
 import com.example.usecase.game.FinishSimpleBatchUseCase
 import com.example.usecase.game.GetGameResultUseCase
+import com.example.usecase.game.GetMyRankingUseCase
 import com.example.usecase.game.GetRankingUseCase
 import com.example.usecase.advance.GetAdvancePaymentUseCase
 import com.example.usecase.advance.UpsertAdvancePaymentUseCase
@@ -39,9 +40,13 @@ import com.example.usecase.shift.GetShiftStatsUseCase
 import com.example.usecase.shift.PatchShiftUseCase
 import com.example.usecase.shift.RegisterShiftUseCase
 import com.example.usecase.store.GetStoreListUseCase
+import com.example.usecase.user.AdminDeleteUserUseCase
+import com.example.usecase.user.AdminResetUserPasswordUseCase
 import com.example.usecase.user.CreateUserUseCase
+import com.example.usecase.user.DeleteMyAccountUseCase
 import com.example.usecase.user.DeleteUserUseCase
 import com.example.usecase.user.GetUserUseCase
+import com.example.usecase.user.ListGeneralUsersUseCase
 import com.example.usecase.user.PatchUserUseCase
 import com.example.usecase.user.UpdateUserUseCase
 import io.ktor.server.auth.authenticate
@@ -57,6 +62,10 @@ class RootRoutes(
     private val updateUserUseCase: UpdateUserUseCase,
     private val patchUserUseCase: PatchUserUseCase,
     private val deleteUserUseCase: DeleteUserUseCase,
+    private val deleteMyAccountUseCase: DeleteMyAccountUseCase,
+    private val listGeneralUsersUseCase: ListGeneralUsersUseCase,
+    private val adminDeleteUserUseCase: AdminDeleteUserUseCase,
+    private val adminResetUserPasswordUseCase: AdminResetUserPasswordUseCase,
     private val getGameSettingsUseCase: GetGameSettingsUseCase,
     private val updateGameSettingsUseCase: UpdateGameSettingsUseCase,
     private val patchGameSettingsUseCase: PatchGameSettingsUseCase,
@@ -73,6 +82,7 @@ class RootRoutes(
     private val finishSimpleBatchUseCase: FinishSimpleBatchUseCase,
     private val deleteSimpleBatchResultsUseCase: DeleteSimpleBatchResultsUseCase,
     private val getRankingUseCase: GetRankingUseCase,
+    private val getMyRankingUseCase: GetMyRankingUseCase,
     private val registerShiftUseCase: RegisterShiftUseCase,
     private val editShiftUseCase: EditShiftUseCase,
     private val patchShiftUseCase: PatchShiftUseCase,
@@ -110,7 +120,14 @@ class RootRoutes(
                 getUserUseCase = getUserUseCase,
                 updateUserUseCase = updateUserUseCase,
                 patchUserUseCase = patchUserUseCase,
-                deleteUserUseCase = deleteUserUseCase
+                deleteUserUseCase = deleteUserUseCase,
+                deleteMyAccountUseCase = deleteMyAccountUseCase
+            )
+            installAdminUserRoutes(
+                getUserUseCase = getUserUseCase,
+                listGeneralUsersUseCase = listGeneralUsersUseCase,
+                adminDeleteUserUseCase = adminDeleteUserUseCase,
+                adminResetUserPasswordUseCase = adminResetUserPasswordUseCase
             )
             installSettingsRoutes(
                 getGameSettingsUseCase = getGameSettingsUseCase,
@@ -131,7 +148,10 @@ class RootRoutes(
                 finishSimpleBatchUseCase = finishSimpleBatchUseCase,
                 deleteSimpleBatchResultsUseCase = deleteSimpleBatchResultsUseCase
             )
-            installRankingRoutes(getRankingUseCase = getRankingUseCase)
+            installRankingRoutes(
+                getRankingUseCase = getRankingUseCase,
+                getMyRankingUseCase = getMyRankingUseCase
+            )
             installShiftRoutes(
                 getMonthlyShiftUseCase = getMonthlyShiftUseCase,
                 getDailyShiftUseCase = getDailyShiftUseCase,

@@ -62,6 +62,8 @@ class GetDashboardSummaryUseCaseTest {
                 totalNightMinutes = 0,
                 baseWageTotal = 1200.0,
                 nightExtraTotal = 0.0,
+                specialAllowanceRegularTotal = 0.0,
+                specialAllowanceLateNightTotal = 0.0,
                 specialAllowanceTotal = 0.0,
                 specialAllowances = emptyList(),
                 transportTotal = 500,

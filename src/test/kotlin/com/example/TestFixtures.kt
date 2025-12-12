@@ -19,7 +19,7 @@ import kotlinx.datetime.plus
 object TestFixtures {
     private val now = Clock.System.now()
 
-    fun user(id: Long = 1) = User(
+    fun user(id: Long = 1, isAdmin: Boolean = false) = User(
         id = id,
         name = "User$id",
         nickname = "nickname$id",
@@ -27,6 +27,7 @@ object TestFixtures {
         prefectureCode = "01",
         email = "user$id@example.com",
         zooId = (100000 + id).toInt(),
+        isAdmin = isAdmin,
         createdAt = now,
         updatedAt = now
     )

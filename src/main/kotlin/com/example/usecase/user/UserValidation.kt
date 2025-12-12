@@ -17,14 +17,14 @@ private val EMAIL_REGEX =
     Regex("^(?=.{1,255}\$)[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,63}\$", RegexOption.IGNORE_CASE)
 private const val NAME_MIN = 1
 private const val NAME_MAX = 100
-private const val PASSWORD_MIN = 12
+private const val PASSWORD_MIN = 8
 private const val PASSWORD_MAX = 100
 
 internal fun CreateUserUseCase.Command.validateFields() {
     validate(this) {
         validate(CreateUserUseCase.Command::name).hasSize(NAME_MIN, NAME_MAX)
         validate(CreateUserUseCase.Command::nickname).hasSize(NAME_MIN, NAME_MAX)
-        validate(CreateUserUseCase.Command::storeName).hasSize(NAME_MIN, NAME_MAX)
+        validate(CreateUserUseCase.Command::storeId).isBetween(1L, Long.MAX_VALUE)
         validate(CreateUserUseCase.Command::prefectureCode).matches(PREFECTURE_CODE_REGEX)
         validate(CreateUserUseCase.Command::email).matches(EMAIL_REGEX)
         validate(CreateUserUseCase.Command::zooId).isBetween(1, 999_999)

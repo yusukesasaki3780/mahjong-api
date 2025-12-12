@@ -14,6 +14,7 @@ object UsersTable : Table("users") {
     val prefectureCode = varchar("prefecture_code", length = 2)
     val email = varchar("email", length = 255)
     val zooId = integer("zoo_id")
+    val isAdmin = bool("is_admin").default(false)
     val createdAt = timestamp("created_at")
     val updatedAt = timestamp("updated_at")
 

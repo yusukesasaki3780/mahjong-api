@@ -14,7 +14,6 @@ import com.example.domain.repository.ShiftRepository
 import com.example.usecase.common.toStatsRange
 import com.example.usecase.shift.ShiftTimeCalculator
 import java.time.YearMonth
-import kotlin.math.roundToInt
 import kotlinx.datetime.TimeZone
 
 /**
@@ -36,6 +35,8 @@ class CalculateMonthlySalaryUseCase(
         val totalNightMinutes: Long,
         val baseWageTotal: Double,
         val nightExtraTotal: Double,
+        val specialAllowanceRegularTotal: Double,
+        val specialAllowanceLateNightTotal: Double,
         val specialAllowanceTotal: Double,
         val specialAllowances: List<SpecialAllowanceSummary>,
         val transportTotal: Long,
@@ -49,7 +50,8 @@ class CalculateMonthlySalaryUseCase(
     data class SpecialAllowanceSummary(
         val type: String,
         val label: String,
-        val unitPrice: Int,
+        val unitPrice: Double,
+        val rate: Double? = null,
         val hours: Double,
         val amount: Double,
         val specialHourlyWageId: Long? = null
@@ -71,7 +73,6 @@ class CalculateMonthlySalaryUseCase(
             specialNightMinutes += minutes.nightMinutes
             val accumulator = allowanceAccumulators.getOrPut(special.id) {
                 SpecialAllowanceAccumulator(
-                    type = "special_hourly_wage",
                     label = special.label,
                     unitPrice = special.hourlyWage,
                     specialHourlyWageId = special.id
@@ -81,37 +82,24 @@ class CalculateMonthlySalaryUseCase(
         }
         val regularDayHours = regularMinutes.dayMinutes / 60.0
         val regularNightHours = regularMinutes.nightMinutes / 60.0
-        val customSpecialAllowances = allowanceAccumulators.values
-            .mapNotNull { it.toDaySummary() }
+        val regularTotalHours = regularDayHours + regularNightHours
+        val nightPremiumRate = resolveNightPremiumRate(settings.nightRateMultiplier)
+        val specialAllowances = allowanceAccumulators.values
+            .flatMap { it.toBreakdown(nightPremiumRate) }
             .sortedWith(
                 compareBy(
+                    { it.specialHourlyWageId ?: Long.MAX_VALUE },
                     { it.type },
-                    { it.specialHourlyWageId ?: Long.MAX_VALUE }
+                    { it.label }
                 )
             )
-
-        val nightBonuses = allowanceAccumulators.values
-            .filter { it.nightMinutes > 0 }
-            .mapNotNull { acc ->
-                if (settings.nightRateMultiplier == 0.0) return@mapNotNull null
-                val nightBonusUnitPrice = (acc.unitPrice * settings.nightRateMultiplier).roundToInt()
-                val nightHours = acc.nightMinutes / 60.0
-                SpecialAllowanceSummary(
-                    type = "night_bonus",
-                    label = "深夜給（特別手当）",
-                    unitPrice = nightBonusUnitPrice,
-                    hours = nightHours,
-                    amount = nightBonusUnitPrice * nightHours,
-                    specialHourlyWageId = acc.specialHourlyWageId
-                )
-            }
-            .sortedBy { it.specialHourlyWageId ?: Long.MAX_VALUE }
-
-        val specialAllowances = buildList {
-            addAll(customSpecialAllowances)
-            addAll(nightBonuses)
-        }
-        val specialAllowanceTotal = specialAllowances.sumOf { it.amount }
+        val specialAllowanceRegularTotal = specialAllowances
+            .filter { it.type == SPECIAL_ALLOWANCE_TYPE_REGULAR }
+            .sumOf { it.amount }
+        val specialAllowanceLateNightTotal = specialAllowances
+            .filter { it.type == SPECIAL_ALLOWANCE_TYPE_LATE_NIGHT }
+            .sumOf { it.amount }
+        val specialAllowanceTotal = specialAllowanceRegularTotal + specialAllowanceLateNightTotal
         val totalDayMinutes = regularMinutes.dayMinutes + specialDayMinutes
         val totalNightMinutes = regularMinutes.nightMinutes + specialNightMinutes
         val totalWorkMinutes = totalDayMinutes + totalNightMinutes
@@ -123,8 +111,8 @@ class CalculateMonthlySalaryUseCase(
 
         val (baseWageTotal, nightExtraTotal) = when (settings.wageType) {
             WageType.HOURLY -> {
-                val base = settings.hourlyWage * regularDayHours
-                val nightUnitPrice = settings.hourlyWage * settings.nightRateMultiplier
+                val base = settings.hourlyWage * regularTotalHours
+                val nightUnitPrice = settings.hourlyWage * nightPremiumRate
                 val nightExtra = nightUnitPrice * regularNightHours
                 Pair(base, nightExtra)
             }
@@ -149,6 +137,8 @@ class CalculateMonthlySalaryUseCase(
             totalNightMinutes = totalNightMinutes,
             baseWageTotal = baseWageTotal,
             nightExtraTotal = nightExtraTotal,
+            specialAllowanceRegularTotal = specialAllowanceRegularTotal,
+            specialAllowanceLateNightTotal = specialAllowanceLateNightTotal,
             specialAllowanceTotal = specialAllowanceTotal,
             specialAllowances = specialAllowances,
             transportTotal = transportTotal,
@@ -161,7 +151,6 @@ class CalculateMonthlySalaryUseCase(
     }
 
     private data class SpecialAllowanceAccumulator(
-        val type: String,
         val label: String,
         val unitPrice: Int,
         val specialHourlyWageId: Long,
@@ -173,19 +162,48 @@ class CalculateMonthlySalaryUseCase(
             nightMinutes += minutes.nightMinutes
         }
 
-        fun toDaySummary(): SpecialAllowanceSummary? {
-            if (dayMinutes == 0L) return null
-            val hours = dayMinutes / 60.0
-            val amount = unitPrice * hours
-            return SpecialAllowanceSummary(
-                type = type,
-                label = label,
-                unitPrice = unitPrice,
-                hours = hours,
-                amount = amount,
-                specialHourlyWageId = specialHourlyWageId
-            )
+        fun toBreakdown(nightPremiumRate: Double): List<SpecialAllowanceSummary> {
+            val summaries = mutableListOf<SpecialAllowanceSummary>()
+            val unit = unitPrice.toDouble()
+            val totalMinutes = dayMinutes + nightMinutes
+            val totalHours = totalMinutes / 60.0
+            if (totalHours > 0) {
+                summaries += SpecialAllowanceSummary(
+                    type = SPECIAL_ALLOWANCE_TYPE_REGULAR,
+                    label = label,
+                    unitPrice = unit,
+                    rate = null,
+                    hours = totalHours,
+                    amount = unit * totalHours,
+                    specialHourlyWageId = specialHourlyWageId
+                )
+            }
+            val nightHours = nightMinutes / 60.0
+            if (nightHours > 0 && nightPremiumRate > 0.0) {
+                summaries += SpecialAllowanceSummary(
+                    type = SPECIAL_ALLOWANCE_TYPE_LATE_NIGHT,
+                    label = "${label}（深夜）",
+                    unitPrice = unit,
+                    rate = nightPremiumRate,
+                    hours = nightHours,
+                    amount = unit * nightPremiumRate * nightHours,
+                    specialHourlyWageId = specialHourlyWageId
+                )
+            }
+            return summaries
         }
+    }
+
+    private fun resolveNightPremiumRate(multiplier: Double): Double =
+        when {
+            multiplier <= 0.0 -> 0.0
+            multiplier > 1.0 -> multiplier - 1.0
+            else -> multiplier
+        }
+
+    private companion object {
+        const val SPECIAL_ALLOWANCE_TYPE_REGULAR = "special_regular"
+        const val SPECIAL_ALLOWANCE_TYPE_LATE_NIGHT = "special_late_night"
     }
 }
 

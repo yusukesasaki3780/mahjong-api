@@ -13,7 +13,7 @@ import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.greaterEq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.less
-import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.and                    
 import org.jetbrains.exposed.sql.avg
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
@@ -191,6 +191,10 @@ class ExposedGameResultRepository : GameResultRepository {
             (GameResultsTable.userId eq userId) and
                 (GameResultsTable.simpleBatchId eq simpleBatchId)
         }
+    }
+
+    override suspend fun deleteAllForUser(userId: Long): Int = dbQuery {
+        GameResultsTable.deleteWhere { GameResultsTable.userId eq userId }
     }
 
     private fun fetchById(id: Long): GameResult =

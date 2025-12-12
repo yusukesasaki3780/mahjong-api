@@ -51,7 +51,7 @@ internal suspend fun ApplicationCall.userId(): Long {
     return actorId
 }
 
-private suspend fun ApplicationCall.respondValidationErrors(
+internal suspend fun ApplicationCall.respondValidationErrors(
     errors: List<FieldError>,
     message: String = ValidationMessageResolver.defaultMessage(),
     status: HttpStatusCode = HttpStatusCode.BadRequest
@@ -144,6 +144,10 @@ internal suspend fun ApplicationCall.requireUserAccess(targetUserId: Long): Long
 
 internal suspend fun ApplicationCall.requireAuditContext(targetUserId: Long): AuditContext? {
     val actorId = requireUserAccess(targetUserId) ?: return null
+    return buildAuditContext(actorId)
+}
+
+internal fun ApplicationCall.buildAuditContext(actorId: Long): AuditContext {
     val path = request.path()
     val ip = request.headers[HttpHeaders.XForwardedFor]
         ?: request.headers["X-Real-IP"]
@@ -155,12 +159,14 @@ internal suspend fun ApplicationCall.requireAuditContext(targetUserId: Long): Au
     )
 }
 
-private suspend fun ApplicationCall.respondForbidden() {
+internal suspend fun ApplicationCall.respondForbidden(
+    message: String = "You are not allowed to access this resource."
+) {
     respond(
         HttpStatusCode.Forbidden,
         ErrorResponse(
             errorCode = "FORBIDDEN",
-            message = "You are not allowed to access this resource."
+            message = message
         )
     )
 }

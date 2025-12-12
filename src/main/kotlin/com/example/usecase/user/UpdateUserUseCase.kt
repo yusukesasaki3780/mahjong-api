@@ -10,6 +10,7 @@ import com.example.common.error.DomainValidationException
 import com.example.common.error.FieldError
 import com.example.domain.model.AuditContext
 import com.example.domain.model.User
+import com.example.domain.repository.UserCredentialRepository
 import com.example.domain.repository.UserRepository
 import com.example.infrastructure.logging.AuditLogger
 import kotlinx.datetime.Clock
@@ -19,6 +20,7 @@ import kotlinx.datetime.Clock
  */
 class UpdateUserUseCase(
     private val userRepository: UserRepository,
+    private val credentialRepository: UserCredentialRepository,
     private val auditLogger: AuditLogger
 ) {
 
@@ -28,7 +30,9 @@ class UpdateUserUseCase(
         val nickname: String,
         val storeName: String,
         val prefectureCode: String,
-        val email: String
+        val email: String,
+        val currentPassword: String? = null,
+        val newPassword: String? = null
     )
 
     suspend operator fun invoke(command: Command, auditContext: AuditContext): User {
@@ -53,12 +57,20 @@ class UpdateUserUseCase(
             }
         }
 
+        changePasswordIfRequested(
+            userId = command.userId,
+            credentialRepository = credentialRepository,
+            currentPassword = command.currentPassword,
+            newPassword = command.newPassword
+        )
+
         val updated = current.copy(
             name = command.name,
             nickname = command.nickname,
             storeName = command.storeName,
             prefectureCode = command.prefectureCode,
             email = command.email,
+            isAdmin = current.isAdmin,
             updatedAt = Clock.System.now()
         )
         val result = userRepository.updateUser(updated)

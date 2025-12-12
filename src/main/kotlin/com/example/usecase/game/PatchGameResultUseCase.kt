@@ -1,9 +1,9 @@
 package com.example.usecase.game
 
 /**
- * ### ̃t@C̖
- * - Q[ʂ̈ꕔڂXV PATCH p[XP[XłB
- * - Kp̂߂̃pb`fgݗāAčOXVɑΉł悤ɂĂ܂B
+ * ### このファイルの役割
+ * - ゲーム結果の一部項目だけを PATCH で更新するユースケースです。
+ * - まとめて登録の編集制限や監査ログ出力などの周辺処理もまとめて扱います。
  */
 
 import com.example.common.error.DomainValidationException
@@ -59,10 +59,10 @@ class PatchGameResultUseCase(
                     FieldError(
                         field = "simpleBatchId",
                         code = "SIMPLE_BATCH_EDIT_FORBIDDEN",
-                        message = "??????????????????"
+                        message = "まとめて登録の成績は直接編集できません。"
                     )
                 ),
-                message = "??????????????????"
+                message = "まとめて登録の成績は直接編集できません。"
             )
         }
         if (before.isFinalIncomeRecord && !isSimpleBatchFinalPatch) {
@@ -71,10 +71,10 @@ class PatchGameResultUseCase(
                     FieldError(
                         field = "isFinalIncomeRecord",
                         code = "FINAL_INCOME_EDIT_FORBIDDEN",
-                        message = "????????????????"
+                        message = "最終収支レコードは編集できません。"
                     )
                 ),
-                message = "????????????????"
+                message = "最終収支レコードは編集できません。"
             )
         }
 

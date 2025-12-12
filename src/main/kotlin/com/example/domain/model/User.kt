@@ -15,6 +15,7 @@ data class User(
     val prefectureCode: String,
     val email: String,
     val zooId: Int,
+    val isAdmin: Boolean,
     val createdAt: Instant,
     val updatedAt: Instant
 )

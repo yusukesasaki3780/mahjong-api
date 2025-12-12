@@ -24,4 +24,6 @@ interface ShiftRepository {
 
     suspend fun patchShift(userId: Long, shiftId: Long, patch: ShiftPatch): Shift
     suspend fun findById(shiftId: Long): Shift?
+
+    suspend fun deleteAllForUser(userId: Long): Int
 }

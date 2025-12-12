@@ -18,6 +18,8 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.fail
 import org.junit.jupiter.api.Test
 
 class CalculateMonthlySalaryUseCaseTest {
@@ -89,8 +91,10 @@ class CalculateMonthlySalaryUseCaseTest {
         assertEquals(330, result.totalWorkMinutes)
         assertEquals(60, result.totalDayMinutes)
         assertEquals(270, result.totalNightMinutes)
-        assertEquals(1200.0, result.baseWageTotal, 0.1)
-        assertEquals(1500.0 * 4.5, result.nightExtraTotal, 0.1)
+        assertEquals(1200.0 * 5.5, result.baseWageTotal, 0.1)
+        assertEquals(1200.0 * 0.25 * 4.5, result.nightExtraTotal, 0.1)
+        assertEquals(0.0, result.specialAllowanceRegularTotal, 0.0)
+        assertEquals(0.0, result.specialAllowanceLateNightTotal, 0.0)
         assertEquals(0.0, result.specialAllowanceTotal, 0.0)
         assertEquals(0, result.specialAllowances.size)
         assertEquals(500, result.transportTotal)
@@ -155,10 +159,13 @@ class CalculateMonthlySalaryUseCaseTest {
         assertEquals(0, result.totalNightMinutes)
         assertEquals(0.0, result.baseWageTotal, 0.0)
         assertEquals(0.0, result.nightExtraTotal, 0.0)
+        assertEquals(8000.0, result.specialAllowanceRegularTotal, 0.1)
+        assertEquals(0.0, result.specialAllowanceLateNightTotal, 0.0)
         assertEquals(8000.0, result.specialAllowanceTotal, 0.1)
         val allowance = result.specialAllowances.single()
-        assertEquals("special_hourly_wage", allowance.type)
-        assertEquals(2000, allowance.unitPrice)
+        assertEquals("special_regular", allowance.type)
+        assertEquals(2000.0, allowance.unitPrice, 0.01)
+        assertEquals(null, allowance.rate)
         assertEquals(4.0, allowance.hours, 0.01)
         assertEquals(allowance.amount, result.specialAllowanceTotal, 0.1)
         assertEquals(result.specialAllowanceTotal, result.grossSalary, 0.1)
@@ -166,7 +173,7 @@ class CalculateMonthlySalaryUseCaseTest {
     }
 
     @Test
-    fun `adds night bonus only for special shift night hours`() = runTest {
+    fun `splits special allowance into regular and late-night entries`() = runTest {
         val yearMonth = YearMonth.of(2025, 3)
         val start = Instant.parse("2025-03-10T21:00:00Z")
         val end = Instant.parse("2025-03-11T02:00:00Z")
@@ -219,14 +226,19 @@ class CalculateMonthlySalaryUseCaseTest {
         assertEquals(0.0, result.baseWageTotal, 0.0)
         assertEquals(0.0, result.nightExtraTotal, 0.0)
         assertEquals(2, result.specialAllowances.size)
-        val baseAllowance = result.specialAllowances.first { it.type == "special_hourly_wage" }
-        val nightBonus = result.specialAllowances.first { it.type == "night_bonus" }
-        assertEquals(1.0, baseAllowance.hours, 0.01)
-        assertEquals(2000, baseAllowance.unitPrice)
-        assertEquals(2000.0, baseAllowance.amount, 0.1)
-        assertEquals(4.0, nightBonus.hours, 0.01)
-        assertEquals(2500, nightBonus.unitPrice)
-        assertEquals(10000.0, nightBonus.amount, 0.1)
+        val regular = result.specialAllowances.first { it.type == "special_regular" }
+        val lateNight = result.specialAllowances.first { it.type == "special_late_night" }
+        assertEquals(5.0, regular.hours, 0.01)
+        assertEquals(2000.0, regular.unitPrice, 0.01)
+        assertNull(regular.rate)
+        assertEquals(10000.0, regular.amount, 0.1)
+        assertEquals(4.0, lateNight.hours, 0.01)
+        assertEquals(2000.0, lateNight.unitPrice, 0.01)
+        val lateNightRate = lateNight.rate ?: fail("late night rate should be present")
+        assertEquals(0.25, lateNightRate, 0.0)
+        assertEquals(2000.0 * 0.25 * 4, lateNight.amount, 0.1)
+        assertEquals(10000.0, result.specialAllowanceRegularTotal, 0.1)
+        assertEquals(2000.0 * 0.25 * 4, result.specialAllowanceLateNightTotal, 0.1)
         assertEquals(12000.0, result.specialAllowanceTotal, 0.1)
     }
 }

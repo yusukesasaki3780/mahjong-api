@@ -88,6 +88,17 @@ class UserRoutesTest : RoutesTestBase() {
     }
 
     @Test
+    fun `delete current user succeeds`() = testApplication {
+        coEvery { deleteMyAccountUseCase(1, any()) } returns true
+        installRoutes()
+        val response = client.delete("/users/me") {
+            withAuth(userId = 1)
+        }
+        assertEquals(HttpStatusCode.NoContent, response.status)
+        coVerify { deleteMyAccountUseCase(1, any()) }
+    }
+
+    @Test
     fun `invalid user id returns 400`() = testApplication {
         installRoutes()
         val response = client.get("/users/abc") {
