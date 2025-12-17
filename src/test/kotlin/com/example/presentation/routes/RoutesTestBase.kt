@@ -49,6 +49,7 @@ import com.example.usecase.store.GetStoreListUseCase
 import com.example.usecase.user.AdminDeleteUserUseCase
 import com.example.usecase.user.AdminResetUserPasswordUseCase
 import com.example.usecase.user.AdminRestoreUserUseCase
+import com.example.usecase.user.AdminUpdateUserAdminFlagUseCase
 import com.example.usecase.user.CreateUserUseCase
 import com.example.usecase.user.DeleteMyAccountUseCase
 import com.example.usecase.user.DeleteUserUseCase
@@ -101,6 +102,7 @@ abstract class RoutesTestBase {
     protected val adminDeleteUserUseCase: AdminDeleteUserUseCase = mockk(relaxed = true)
     protected val adminResetUserPasswordUseCase: AdminResetUserPasswordUseCase = mockk(relaxed = true)
     protected val adminRestoreUserUseCase: AdminRestoreUserUseCase = mockk(relaxed = true)
+    protected val adminUpdateUserAdminFlagUseCase: AdminUpdateUserAdminFlagUseCase = mockk(relaxed = true)
 
     protected val getGameSettingsUseCase: GetGameSettingsUseCase = mockk(relaxed = true)
     protected val updateGameSettingsUseCase: UpdateGameSettingsUseCase = mockk(relaxed = true)
@@ -186,6 +188,7 @@ abstract class RoutesTestBase {
                 adminDeleteUserUseCase = adminDeleteUserUseCase,
                 adminResetUserPasswordUseCase = adminResetUserPasswordUseCase,
                 adminRestoreUserUseCase = adminRestoreUserUseCase,
+                adminUpdateUserAdminFlagUseCase = adminUpdateUserAdminFlagUseCase,
                 getGameSettingsUseCase = getGameSettingsUseCase,
                 updateGameSettingsUseCase = updateGameSettingsUseCase,
                 patchGameSettingsUseCase = patchGameSettingsUseCase,

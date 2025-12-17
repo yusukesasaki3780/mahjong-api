@@ -11,5 +11,6 @@ data class UserPatch(
     val storeName: String? = null,
     val prefectureCode: String? = null,
     val email: String? = null,
+    val isAdmin: Boolean? = null,
     val updatedAt: Instant? = null
 )

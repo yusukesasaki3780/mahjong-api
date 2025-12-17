@@ -37,14 +37,26 @@ class AdminUserRoutesTest : RoutesTestBase() {
     fun `admin can list general users`() = testApplication {
         val admin = TestFixtures.user(1, storeId = 10, isAdmin = true)
         coEvery { getUserUseCase(1) } returns admin
-        coEvery { listGeneralUsersUseCase(storeId = admin.storeId, includeDeleted = true) } returns listOf(TestFixtures.user(2))
+        coEvery {
+            listGeneralUsersUseCase(
+                storeId = admin.storeId,
+                includeDeleted = true,
+                includeAdmins = true
+            )
+        } returns listOf(TestFixtures.user(2))
         installRoutes()
 
         val response = client.get("/admin/users") {
             withAuth(userId = 1)
         }
         assertEquals(HttpStatusCode.OK, response.status)
-        coVerify { listGeneralUsersUseCase(storeId = admin.storeId, includeDeleted = true) }
+        coVerify {
+            listGeneralUsersUseCase(
+                storeId = admin.storeId,
+                includeDeleted = true,
+                includeAdmins = true
+            )
+        }
     }
 
     @Test
@@ -106,5 +118,64 @@ class AdminUserRoutesTest : RoutesTestBase() {
         }
         assertEquals(HttpStatusCode.OK, response.status)
         coVerify { adminRestoreUserUseCase(admin.id!!, admin.storeId, 3, any()) }
+    }
+
+    @Test
+    fun `admin can update admin flag`() = testApplication {
+        val admin = TestFixtures.user(1, storeId = 10, isAdmin = true)
+        val target = TestFixtures.user(2, storeId = 10, isAdmin = true)
+        coEvery { getUserUseCase(1) } returns admin
+        coEvery {
+            adminUpdateUserAdminFlagUseCase(
+                adminId = admin.id!!,
+                adminName = admin.name,
+                adminStoreId = admin.storeId,
+                targetUserId = 2,
+                isAdmin = true,
+                auditContext = any()
+            )
+        } returns target
+        installRoutes()
+
+        val response = client.patch("/admin/users/2/admin") {
+            contentType(ContentType.Application.Json)
+            setBody("""{"isAdmin":true}""")
+            withAuth(userId = 1)
+        }
+        assertEquals(HttpStatusCode.OK, response.status)
+        coVerify {
+            adminUpdateUserAdminFlagUseCase(
+                adminId = admin.id!!,
+                adminName = admin.name,
+                adminStoreId = admin.storeId,
+                targetUserId = 2,
+                isAdmin = true,
+                auditContext = any()
+            )
+        }
+    }
+
+    @Test
+    fun `admin flag update returns 404 when user not found`() = testApplication {
+        val admin = TestFixtures.user(1, storeId = 10, isAdmin = true)
+        coEvery { getUserUseCase(1) } returns admin
+        coEvery {
+            adminUpdateUserAdminFlagUseCase(
+                adminId = admin.id!!,
+                adminName = admin.name,
+                adminStoreId = admin.storeId,
+                targetUserId = 99,
+                isAdmin = false,
+                auditContext = any()
+            )
+        } returns null
+        installRoutes()
+
+        val response = client.patch("/admin/users/99/admin") {
+            contentType(ContentType.Application.Json)
+            setBody("""{"isAdmin":false}""")
+            withAuth(userId = 1)
+        }
+        assertEquals(HttpStatusCode.NotFound, response.status)
     }
 }

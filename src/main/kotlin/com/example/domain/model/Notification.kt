@@ -7,7 +7,9 @@ import kotlinx.serialization.Serializable
 enum class NotificationType {
     SHIFT_CREATED,
     SHIFT_UPDATED,
-    SHIFT_DELETED
+    SHIFT_DELETED,
+    ADMIN_ROLE_GRANTED,
+    ADMIN_ROLE_REVOKED
 }
 
 @Serializable

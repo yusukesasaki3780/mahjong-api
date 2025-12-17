@@ -61,7 +61,7 @@ class GetShiftBoardUseCaseTest {
         val actor = TestFixtures.user(id = 1, storeId = 10, isAdmin = true)
         coEvery { contextProvider.forStoreView(1, 10) } returns storeContext(actor, editable = true, canIncludeDeleted = true)
         every { permissionService.ensureCanView(any()) } returns Unit
-        coEvery { userRepository.listNonAdminUsers(10, includeDeleted = true) } returns listOf(
+        coEvery { userRepository.listUsers(10, includeDeleted = true, includeAdmins = false) } returns listOf(
             TestFixtures.user(id = 2, storeId = 10)
         )
         coEvery { userRepository.findByIds(any()) } returns emptyList()
@@ -110,7 +110,7 @@ class GetShiftBoardUseCaseTest {
         val actor = TestFixtures.user(id = 3, storeId = 10, isAdmin = false)
         coEvery { contextProvider.forStoreView(3, 10) } returns storeContext(actor, editable = false, canIncludeDeleted = false)
         every { permissionService.ensureCanView(any()) } returns Unit
-        coEvery { userRepository.listNonAdminUsers(10, includeDeleted = false) } returns listOf(
+        coEvery { userRepository.listUsers(10, includeDeleted = false, includeAdmins = false) } returns listOf(
             TestFixtures.user(id = 3, storeId = 10, isAdmin = false)
         )
         coEvery { userRepository.findByIds(any()) } returns emptyList()
@@ -137,7 +137,7 @@ class GetShiftBoardUseCaseTest {
         val actor = TestFixtures.user(id = 4, storeId = 1, isAdmin = true)
         coEvery { contextProvider.forStoreView(4, 10) } returns storeContext(actor, editable = false, canIncludeDeleted = true)
         every { permissionService.ensureCanView(any()) } returns Unit
-        coEvery { userRepository.listNonAdminUsers(10, includeDeleted = true) } returns emptyList()
+        coEvery { userRepository.listUsers(10, includeDeleted = true, includeAdmins = false) } returns emptyList()
         coEvery { userRepository.findByIds(any()) } returns emptyList()
         coEvery { shiftRepository.getShiftsByStore(10, any(), any()) } returns emptyList()
         coEvery { requirementRepository.findByStoreAndDateRange(10, any(), any()) } returns emptyList()
@@ -185,7 +185,7 @@ class GetShiftBoardUseCaseTest {
         val actor = TestFixtures.user(id = 6, storeId = 10, isAdmin = true)
         coEvery { contextProvider.forStoreView(6, 10) } returns storeContext(actor, editable = true, canIncludeDeleted = true)
         every { permissionService.ensureCanView(any()) } returns Unit
-        coEvery { userRepository.listNonAdminUsers(10, includeDeleted = true) } returns emptyList()
+        coEvery { userRepository.listUsers(10, includeDeleted = true, includeAdmins = false) } returns emptyList()
         coEvery { shiftRepository.getShiftsByStore(10, any(), any()) } returns listOf(
             TestFixtures.shift(id = 70, userId = 99, storeId = 10)
         )
@@ -213,7 +213,7 @@ class GetShiftBoardUseCaseTest {
         coEvery { contextProvider.forStoreView(20, 10) } returns storeContext(actor, editable = true, canIncludeDeleted = true)
         every { permissionService.ensureCanView(any()) } returns Unit
         val member = TestFixtures.user(id = 21, storeId = 10)
-        coEvery { userRepository.listNonAdminUsers(10, includeDeleted = true) } returns listOf(member)
+        coEvery { userRepository.listUsers(10, includeDeleted = true, includeAdmins = false) } returns listOf(member)
         coEvery { userRepository.findByIds(any()) } returns emptyList()
         coEvery { shiftRepository.getShiftsByStore(10, any(), any()) } returns listOf(
             customShift(
@@ -244,7 +244,7 @@ class GetShiftBoardUseCaseTest {
         coEvery { contextProvider.forStoreView(30, 10) } returns storeContext(actor, editable = true, canIncludeDeleted = true)
         every { permissionService.ensureCanView(any()) } returns Unit
         val member = TestFixtures.user(id = 31, storeId = 10)
-        coEvery { userRepository.listNonAdminUsers(10, includeDeleted = true) } returns listOf(member)
+        coEvery { userRepository.listUsers(10, includeDeleted = true, includeAdmins = false) } returns listOf(member)
         coEvery { userRepository.findByIds(any()) } returns emptyList()
         coEvery { shiftRepository.getShiftsByStore(10, any(), any()) } returns listOf(
             customShift(
@@ -275,7 +275,7 @@ class GetShiftBoardUseCaseTest {
         coEvery { contextProvider.forStoreView(40, 10) } returns storeContext(actor, editable = true, canIncludeDeleted = true)
         every { permissionService.ensureCanView(any()) } returns Unit
         val member = TestFixtures.user(id = 41, storeId = 10)
-        coEvery { userRepository.listNonAdminUsers(10, includeDeleted = true) } returns listOf(member)
+        coEvery { userRepository.listUsers(10, includeDeleted = true, includeAdmins = false) } returns listOf(member)
         coEvery { userRepository.findByIds(any()) } returns emptyList()
         coEvery { shiftRepository.getShiftsByStore(10, any(), any()) } returns listOf(
             customShift(
@@ -306,7 +306,7 @@ class GetShiftBoardUseCaseTest {
         coEvery { contextProvider.forStoreView(50, 10) } returns storeContext(actor, editable = true, canIncludeDeleted = true)
         every { permissionService.ensureCanView(any()) } returns Unit
         val member = TestFixtures.user(id = 51, storeId = 10)
-        coEvery { userRepository.listNonAdminUsers(10, includeDeleted = true) } returns listOf(member)
+        coEvery { userRepository.listUsers(10, includeDeleted = true, includeAdmins = false) } returns listOf(member)
         coEvery { userRepository.findByIds(any()) } returns emptyList()
         coEvery { shiftRepository.getShiftsByStore(10, any(), any()) } returns listOf(
             customShift(
@@ -337,7 +337,7 @@ class GetShiftBoardUseCaseTest {
         coEvery { contextProvider.forStoreView(70, 10) } returns storeContext(actor, editable = true, canIncludeDeleted = true)
         every { permissionService.ensureCanView(any()) } returns Unit
         val member = TestFixtures.user(id = 71, storeId = 10)
-        coEvery { userRepository.listNonAdminUsers(10, includeDeleted = true) } returns listOf(member)
+        coEvery { userRepository.listUsers(10, includeDeleted = true, includeAdmins = false) } returns listOf(member)
         coEvery { userRepository.findByIds(any()) } returns emptyList()
         val startDate = LocalDate.parse("2025-01-01")
         val endDate = startDate.plus(1, DateTimeUnit.DAY)
@@ -397,7 +397,7 @@ class GetShiftBoardUseCaseTest {
         val members = (1L..6L).map { memberId ->
             TestFixtures.user(id = 100 + memberId, storeId = 10)
         }
-        coEvery { userRepository.listNonAdminUsers(10, includeDeleted = true) } returns members
+        coEvery { userRepository.listUsers(10, includeDeleted = true, includeAdmins = false) } returns members
         coEvery { userRepository.findByIds(any()) } returns emptyList()
         val shifts = listOf(
             customShift(
@@ -487,7 +487,7 @@ class GetShiftBoardUseCaseTest {
         val actor = TestFixtures.user(id = 80, storeId = 10, isAdmin = true)
         coEvery { contextProvider.forStoreView(80, 10) } returns storeContext(actor, editable = true, canIncludeDeleted = true)
         every { permissionService.ensureCanView(any()) } returns Unit
-        coEvery { userRepository.listNonAdminUsers(10, includeDeleted = true) } returns emptyList()
+        coEvery { userRepository.listUsers(10, includeDeleted = true, includeAdmins = false) } returns emptyList()
         coEvery { userRepository.findByIds(any()) } returns emptyList()
         val saturday = LocalDate.parse("2025-01-04") // Saturday
         val sunday = saturday.plus(1, DateTimeUnit.DAY)

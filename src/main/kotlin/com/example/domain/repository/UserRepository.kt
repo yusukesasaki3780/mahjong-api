@@ -25,7 +25,11 @@ interface UserRepository {
 
     suspend fun restoreUser(userId: Long): Boolean
 
-    suspend fun listNonAdminUsers(storeId: Long, includeDeleted: Boolean = false): List<User>
+    suspend fun listUsers(
+        storeId: Long,
+        includeDeleted: Boolean = false,
+        includeAdmins: Boolean = false
+    ): List<User>
     suspend fun findByIds(ids: Collection<Long>): List<User>
 
     /**

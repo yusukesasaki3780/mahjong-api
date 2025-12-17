@@ -50,6 +50,7 @@ import com.example.usecase.store.GetStoreListUseCase
 import com.example.usecase.user.AdminDeleteUserUseCase
 import com.example.usecase.user.AdminResetUserPasswordUseCase
 import com.example.usecase.user.AdminRestoreUserUseCase
+import com.example.usecase.user.AdminUpdateUserAdminFlagUseCase
 import com.example.usecase.user.CreateUserUseCase
 import com.example.usecase.user.DeleteMyAccountUseCase
 import com.example.usecase.user.DeleteUserUseCase
@@ -76,6 +77,7 @@ class RootRoutes(
     private val adminDeleteUserUseCase: AdminDeleteUserUseCase,
     private val adminResetUserPasswordUseCase: AdminResetUserPasswordUseCase,
     private val adminRestoreUserUseCase: AdminRestoreUserUseCase,
+    private val adminUpdateUserAdminFlagUseCase: AdminUpdateUserAdminFlagUseCase,
     private val getGameSettingsUseCase: GetGameSettingsUseCase,
     private val updateGameSettingsUseCase: UpdateGameSettingsUseCase,
     private val patchGameSettingsUseCase: PatchGameSettingsUseCase,
@@ -147,7 +149,8 @@ class RootRoutes(
                 listGeneralUsersUseCase = listGeneralUsersUseCase,
                 adminDeleteUserUseCase = adminDeleteUserUseCase,
                 adminResetUserPasswordUseCase = adminResetUserPasswordUseCase,
-                adminRestoreUserUseCase = adminRestoreUserUseCase
+                adminRestoreUserUseCase = adminRestoreUserUseCase,
+                adminUpdateUserAdminFlagUseCase = adminUpdateUserAdminFlagUseCase
             )
             installSettingsRoutes(
                 getGameSettingsUseCase = getGameSettingsUseCase,

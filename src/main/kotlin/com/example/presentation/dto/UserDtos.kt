@@ -72,6 +72,7 @@ data class AdminUserSummaryResponse(
     val email: String,
     val storeId: Long,
     val storeName: String,
+    val isAdmin: Boolean,
     val isDeleted: Boolean
 ) {
     companion object {
@@ -82,6 +83,7 @@ data class AdminUserSummaryResponse(
             email = user.email,
             storeId = user.storeId,
             storeName = user.storeName,
+            isAdmin = user.isAdmin,
             isDeleted = user.isDeleted
         )
     }
@@ -90,6 +92,11 @@ data class AdminUserSummaryResponse(
 @Serializable
 data class AdminPasswordResetRequest(
     val newPassword: String
+)
+
+@Serializable
+data class AdminUpdateAdminFlagRequest(
+    val isAdmin: Boolean
 )
 
 @Serializable

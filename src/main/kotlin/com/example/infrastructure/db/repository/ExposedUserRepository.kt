@@ -10,7 +10,6 @@ import com.example.infrastructure.db.tables.GameResultsTable
 import com.example.infrastructure.db.tables.UsersTable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.datetime.Clock
-import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.avg
 import org.jetbrains.exposed.sql.count
@@ -25,6 +24,7 @@ import org.jetbrains.exposed.sql.SqlExpressionBuilder.greaterEq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNotNull
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNull
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.less
+import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 
 /**
@@ -36,7 +36,7 @@ class ExposedUserRepository : UserRepository {
         UsersTable
             .select { UsersTable.userId eq userId }
             .singleOrNull()
-            ?.let(::toUser)
+            ?.toUserModel()
     }
 
     override suspend fun createUser(user: User): User = dbQuery {
@@ -57,7 +57,7 @@ class ExposedUserRepository : UserRepository {
         UsersTable
             .select { UsersTable.userId eq newId }
             .single()
-            .let(::toUser)
+            .toUserModel()
     }
 
     override suspend fun updateUser(user: User): User = dbQuery {
@@ -79,7 +79,7 @@ class ExposedUserRepository : UserRepository {
         UsersTable
             .select { UsersTable.userId eq targetId }
             .single()
-            .let(::toUser)
+            .toUserModel()
     }
 
     override suspend fun patchUser(userId: Long, patch: UserPatch): User = dbQuery {
@@ -89,6 +89,7 @@ class ExposedUserRepository : UserRepository {
             patch.storeName?.let { row[storeName] = it }
             patch.prefectureCode?.let { row[prefectureCode] = it }
             patch.email?.let { row[email] = it }
+            patch.isAdmin?.let { row[UsersTable.isAdmin] = it }
             patch.updatedAt?.let { row[updatedAt] = it }
         }
         if (updatedRows == 0) {
@@ -98,7 +99,7 @@ class ExposedUserRepository : UserRepository {
         UsersTable
             .select { UsersTable.userId eq userId }
             .single()
-            .let(::toUser)
+            .toUserModel()
     }
 
     override suspend fun deleteUser(userId: Long): Boolean = dbQuery {
@@ -115,40 +116,41 @@ class ExposedUserRepository : UserRepository {
         } > 0
     }
 
-    override suspend fun listNonAdminUsers(
+    override suspend fun listUsers(
         storeId: Long,
-        includeDeleted: Boolean
+        includeDeleted: Boolean,
+        includeAdmins: Boolean
     ): List<User> = dbQuery {
-        val baseCondition = (UsersTable.storeId eq storeId) and (UsersTable.isAdmin eq false)
-        val condition = if (includeDeleted) {
-            baseCondition
-        } else {
-            baseCondition and (UsersTable.isDeleted eq false)
+        var condition: Op<Boolean> = UsersTable.storeId eq storeId
+        if (!includeAdmins) {
+            condition = condition and (UsersTable.isAdmin eq false)
         }
-        UsersTable
-            .select { condition }
-            .map(::toUser)
+        if (!includeDeleted) {
+            condition = condition and (UsersTable.isDeleted eq false)
+        }
+
+        UsersTable.select { condition }.map { it.toUserModel() }
     }
 
     override suspend fun findByIds(ids: Collection<Long>): List<User> = dbQuery {
         if (ids.isEmpty()) emptyList()
         else UsersTable
             .select { UsersTable.userId inList ids }
-            .map(::toUser)
+            .map { it.toUserModel() }
     }
 
     override suspend fun findByEmail(emailValue: String): User? = dbQuery {
         UsersTable
             .select { UsersTable.email eq emailValue }
             .singleOrNull()
-            ?.let(::toUser)
+            ?.toUserModel()
     }
 
     override suspend fun findByZooId(zooIdValue: Int): User? = dbQuery {
         UsersTable
             .select { UsersTable.zooId eq zooIdValue }
             .singleOrNull()
-            ?.let(::toUser)
+            ?.toUserModel()
     }
 
     override suspend fun findRanking(gameType: GameType, period: StatsPeriod): List<RankingEntry> = dbQuery {
@@ -190,25 +192,6 @@ class ExposedUserRepository : UserRepository {
             }
             .sortedByDescending { it.totalIncome }
     }
-
-    /**
-     * ResultRow -> User 変換ヘルパー。
-     */
-    private fun toUser(row: ResultRow): User =
-        User(
-            id = row[UsersTable.userId],
-            name = row[UsersTable.name],
-            nickname = row[UsersTable.nickname],
-            storeId = row[UsersTable.storeId],
-            storeName = row[UsersTable.storeName],
-            prefectureCode = row[UsersTable.prefectureCode].trim(),
-            email = row[UsersTable.email],
-            zooId = row[UsersTable.zooId],
-            isAdmin = row[UsersTable.isAdmin],
-            isDeleted = row[UsersTable.isDeleted],
-            createdAt = row[UsersTable.createdAt],
-            updatedAt = row[UsersTable.updatedAt]
-        )
 
     private suspend fun <T> dbQuery(block: suspend () -> T): T =
         newSuspendedTransaction(Dispatchers.IO) { block() }

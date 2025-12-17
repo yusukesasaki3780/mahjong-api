@@ -91,7 +91,11 @@ private class FakeUserRepository(
     override suspend fun patchUser(userId: Long, patch: UserPatch): User = notImplemented()
     override suspend fun deleteUser(userId: Long): Boolean = notImplemented()
     override suspend fun restoreUser(userId: Long): Boolean = notImplemented()
-    override suspend fun listNonAdminUsers(storeId: Long, includeDeleted: Boolean): List<User> = notImplemented()
+    override suspend fun listUsers(
+        storeId: Long,
+        includeDeleted: Boolean,
+        includeAdmins: Boolean
+    ): List<User> = notImplemented()
     override suspend fun findByIds(ids: Collection<Long>): List<User> = ids.mapNotNull(users::get)
     override suspend fun findRanking(
         gameType: GameType,

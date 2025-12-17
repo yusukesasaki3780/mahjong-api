@@ -87,9 +87,10 @@ class GetShiftBoardUseCase(
         val actor = viewContext.actor
 
         val includeDeleted = command.includeDeletedUsers && viewContext.canIncludeDeletedUsers
-        val baseUsers = userRepository.listNonAdminUsers(
+        val baseUsers = userRepository.listUsers(
             storeId = targetStoreId,
-            includeDeleted = includeDeleted
+            includeDeleted = includeDeleted,
+            includeAdmins = false
         )
         val userSummaries = baseUsers.mapNotNull { user ->
             val id = user.id ?: return@mapNotNull null

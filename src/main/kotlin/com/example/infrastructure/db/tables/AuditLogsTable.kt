@@ -7,7 +7,7 @@ object AuditLogsTable : Table("audit_logs") {
     val id = long("id").autoIncrement()
     val entityType = varchar("entity_type", length = 64)
     val entityId = long("entity_id").nullable()
-    val action = varchar("action", length = 16)
+    val action = varchar("action", length = 64)
     val performedBy = long("performed_by")
     val performedAt = timestamp("performed_at")
     val before = text("before").nullable()

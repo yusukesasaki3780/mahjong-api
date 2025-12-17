@@ -108,6 +108,7 @@ fun Application.module() {
     val specialHourlyWageRepository = ExposedSpecialHourlyWageRepository()
     val shiftRequirementRepository = ExposedShiftRequirementRepository()
     val notificationRepository = ExposedNotificationRepository()
+    val adminPrivilegeGateway = ExposedAdminPrivilegeGateway()
     val storeMasterRepository = ExposedStoreMasterRepository()
     val prefectureRepository = ExposedPrefectureRepository()
     val advancePaymentRepository = ExposedAdvancePaymentRepository()
@@ -133,6 +134,10 @@ fun Application.module() {
     val adminDeleteUserUseCase = AdminDeleteUserUseCase(userRepository, deleteUserUseCase)
     val adminResetUserPasswordUseCase = AdminResetUserPasswordUseCase(userRepository, userCredentialRepository)
     val adminRestoreUserUseCase = AdminRestoreUserUseCase(userRepository, auditLogger)
+    val adminUpdateUserAdminFlagUseCase = AdminUpdateUserAdminFlagUseCase(
+        userRepository,
+        adminPrivilegeGateway
+    )
 
     val getGameSettingsUseCase = GetGameSettingsUseCase(gameSettingsRepository)
     val updateGameSettingsUseCase = UpdateGameSettingsUseCase(gameSettingsRepository, auditLogger)
@@ -207,6 +212,7 @@ fun Application.module() {
         adminDeleteUserUseCase,
         adminResetUserPasswordUseCase,
         adminRestoreUserUseCase,
+        adminUpdateUserAdminFlagUseCase,
         getGameSettingsUseCase,
         updateGameSettingsUseCase,
         patchGameSettingsUseCase,
