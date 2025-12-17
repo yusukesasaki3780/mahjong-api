@@ -28,6 +28,7 @@ class LoginUserUseCase(
 ) {
 
     class InvalidCredentialsException : RuntimeException("Invalid credentials")
+    class DeletedAccountException : RuntimeException("Account deleted")
 
     data class Command(val email: String, val password: String)
 
@@ -42,6 +43,9 @@ class LoginUserUseCase(
         // 1. ユーザー情報と入力されたパスワードを検証する
         val user = userRepository.findByEmail(command.email)
             ?: throw InvalidCredentialsException()
+        if (user.isDeleted) {
+            throw DeletedAccountException()
+        }
 
         val userId = user.id ?: throw IllegalArgumentException("User id missing.")
         val verified = credentialRepository.verifyPassword(userId, command.password)
@@ -68,4 +72,3 @@ class LoginUserUseCase(
         )
     }
 }
-

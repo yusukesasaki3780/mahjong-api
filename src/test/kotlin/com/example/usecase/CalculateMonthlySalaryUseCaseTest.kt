@@ -42,6 +42,7 @@ class CalculateMonthlySalaryUseCaseTest {
         val shift = Shift(
             id = 1,
             userId = 1,
+            storeId = 1,
             workDate = LocalDate(2025, 1, 1),
             startTime = Instant.parse("2025-01-01T21:00:00Z"),
             endTime = Instant.parse("2025-01-02T03:00:00Z"),
@@ -122,6 +123,7 @@ class CalculateMonthlySalaryUseCaseTest {
         val shift = Shift(
             id = 1,
             userId = 1,
+            storeId = 1,
             workDate = LocalDate(2025, 2, 5),
             startTime = start,
             endTime = end,
@@ -188,6 +190,7 @@ class CalculateMonthlySalaryUseCaseTest {
         val shift = Shift(
             id = 10,
             userId = 1,
+            storeId = 1,
             workDate = LocalDate(2025, 3, 10),
             startTime = start,
             endTime = end,

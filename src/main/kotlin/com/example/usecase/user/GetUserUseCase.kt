@@ -17,6 +17,5 @@ class GetUserUseCase(
 ) {
 
     suspend operator fun invoke(userId: Long): User? =
-        userRepository.findById(userId)
+        userRepository.findById(userId)?.takeIf { !it.isDeleted }
 }
-

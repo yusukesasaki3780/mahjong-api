@@ -92,6 +92,15 @@ fun Route.installAuthRoutes(
                         message = invalidLoginMessage
                     )
                 )
+            } catch (ex: LoginUserUseCase.DeletedAccountException) {
+                call.skipDefaultErrorHandling()
+                return@post call.respond(
+                    HttpStatusCode.Forbidden,
+                    ErrorResponse(
+                        errorCode = "ACCOUNT_DELETED",
+                        message = "このアカウントは削除されています。"
+                    )
+                )
             }
             loginAttemptTracker.reset(normalizedEmail, clientIp)
             call.respond(LoginResponse.from(result))
@@ -129,4 +138,3 @@ fun Route.installAuthRoutes(
 private fun ApplicationCall.clientIp(): String =
     request.headers["X-Forwarded-For"]?.split(",")?.firstOrNull()?.trim()
         ?: request.local.remoteHost
-

@@ -1,12 +1,18 @@
 package com.example.usecase
 
+import com.example.TestFixtures
+import com.example.at
 import com.example.common.error.DomainValidationException
 import com.example.domain.model.Shift
 import com.example.domain.model.ShiftBreak
 import com.example.domain.repository.ShiftRepository
 import com.example.domain.repository.SpecialHourlyWageRepository
-import com.example.usecase.shift.PatchShiftUseCase
 import com.example.usecase.TestAuditSupport
+import com.example.usecase.shift.PatchShiftUseCase
+import com.example.usecase.shift.ShiftContextProvider
+import com.example.usecase.shift.ShiftNotificationService
+import com.example.usecase.shift.ShiftPermissionService
+import com.example.usecase.shift.ShiftUpdateContext
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -21,27 +27,41 @@ class PatchShiftUseCaseTest {
 
     private val repository = mockk<ShiftRepository>()
     private val specialRepository = mockk<SpecialHourlyWageRepository>(relaxed = true)
-    private val useCase = PatchShiftUseCase(repository, specialRepository, TestAuditSupport.auditLogger)
+    private val notificationService = mockk<ShiftNotificationService>(relaxed = true)
+    private val contextProvider = mockk<ShiftContextProvider>()
+    private val permissionService = mockk<ShiftPermissionService>(relaxed = true)
+    private val useCase = PatchShiftUseCase(
+        repository,
+        specialRepository,
+        TestAuditSupport.auditLogger,
+        notificationService,
+        contextProvider,
+        permissionService
+    )
+
+    private val actor = TestFixtures.user(id = 1)
+    private val store = TestFixtures.store(id = 1)
 
     @Test
     fun `forwards patch when payload is valid`() = runTest {
-        val shift = sampleShift(memo = "patched")
-        coEvery { repository.findById(10) } returns sampleShift("old")
-        coEvery { repository.getShiftsOnDate(1, LocalDate(2025, 1, 1)) } returns emptyList()
-        coEvery { repository.patchShift(eq(1), eq(10), any()) } returns shift
+        val before = sampleShift("old")
+        val after = before.copy(memo = "patched")
+        stubContext(before)
+        coEvery { repository.getShiftsOnDate(1, before.workDate) } returns emptyList()
+        coEvery { repository.patchShift(eq(1), eq(10), any()) } returns after
 
         val result = useCase(
             PatchShiftUseCase.Command(
-                userId = 1,
+                actorId = 1,
                 shiftId = 10,
                 memo = "patched",
-                startTime = Instant.parse("2025-01-01T09:00:00Z"),
-                endTime = Instant.parse("2025-01-01T18:00:00Z"),
+                startTime = LocalDate(2025, 1, 1).at("09:00"),
+                endTime = LocalDate(2025, 1, 1).at("18:00"),
                 breaks = listOf(
                     PatchShiftUseCase.BreakPatchCommand(
                         id = null,
-                        breakStart = Instant.parse("2025-01-01T11:00:00Z"),
-                        breakEnd = Instant.parse("2025-01-01T11:15:00Z")
+                        breakStart = LocalDate(2025, 1, 1).at("11:00"),
+                        breakEnd = LocalDate(2025, 1, 1).at("11:15")
                     ),
                     PatchShiftUseCase.BreakPatchCommand(
                         id = 5,
@@ -58,14 +78,16 @@ class PatchShiftUseCaseTest {
 
     @Test
     fun `throws when only start time is provided`() = runTest {
-        coEvery { repository.findById(10) } returns sampleShift("old")
-        coEvery { repository.getShiftsOnDate(1, LocalDate(2025, 1, 1)) } returns emptyList()
+        val before = sampleShift("old")
+        stubContext(before)
+        coEvery { repository.getShiftsOnDate(1, before.workDate) } returns emptyList()
+
         assertFailsWith<DomainValidationException> {
             useCase(
                 PatchShiftUseCase.Command(
-                    userId = 1,
+                    actorId = 1,
                     shiftId = 10,
-                    startTime = Instant.parse("2025-01-01T09:00:00Z")
+                    startTime = LocalDate(2025, 1, 1).at("09:00")
                 ),
                 TestAuditSupport.auditContext
             )
@@ -74,24 +96,25 @@ class PatchShiftUseCaseTest {
 
     @Test
     fun `throws when new breaks overlap each other`() = runTest {
-        coEvery { repository.findById(10) } returns sampleShift("old")
-        coEvery { repository.getShiftsOnDate(1, LocalDate(2025, 1, 1)) } returns emptyList()
+        val before = sampleShift("old")
+        stubContext(before)
+        coEvery { repository.getShiftsOnDate(1, before.workDate) } returns emptyList()
 
         assertFailsWith<DomainValidationException> {
             useCase(
                 PatchShiftUseCase.Command(
-                    userId = 1,
+                    actorId = 1,
                     shiftId = 10,
                     breaks = listOf(
                         PatchShiftUseCase.BreakPatchCommand(
                             id = null,
-                            breakStart = Instant.parse("2025-01-01T11:05:00Z"),
-                            breakEnd = Instant.parse("2025-01-01T11:20:00Z")
+                            breakStart = LocalDate(2025, 1, 1).at("11:05"),
+                            breakEnd = LocalDate(2025, 1, 1).at("11:20")
                         ),
                         PatchShiftUseCase.BreakPatchCommand(
                             id = null,
-                            breakStart = Instant.parse("2025-01-01T11:10:00Z"),
-                            breakEnd = Instant.parse("2025-01-01T11:25:00Z")
+                            breakStart = LocalDate(2025, 1, 1).at("11:10"),
+                            breakEnd = LocalDate(2025, 1, 1).at("11:25")
                         )
                     )
                 ),
@@ -103,13 +126,13 @@ class PatchShiftUseCaseTest {
     @Test
     fun `allows memo only patch`() = runTest {
         val before = sampleShift("old")
-        coEvery { repository.findById(10) } returns before
-        coEvery { repository.getShiftsOnDate(1, LocalDate(2025, 1, 1)) } returns emptyList()
+        stubContext(before)
+        coEvery { repository.getShiftsOnDate(1, before.workDate) } returns emptyList()
         coEvery { repository.patchShift(eq(1), eq(10), any()) } returns before.copy(memo = "updated")
 
         val result = useCase(
             PatchShiftUseCase.Command(
-                userId = 1,
+                actorId = 1,
                 shiftId = 10,
                 memo = "updated"
             ),
@@ -123,39 +146,34 @@ class PatchShiftUseCaseTest {
     fun `allows cross midnight shift update with breaks`() = runTest {
         val before = sampleShift("old").copy(
             workDate = LocalDate(2025, 11, 26),
-            startTime = Instant.parse("2025-11-26T13:00:00Z"), // 22:00+09
-            endTime = Instant.parse("2025-11-27T01:00:00Z"),   // 10:00+09
+            startTime = LocalDate(2025, 11, 26).at("13:00"),
+            endTime = LocalDate(2025, 11, 27).at("01:00"),
             breaks = listOf(
                 ShiftBreak(
                     id = 50,
                     shiftId = 10,
-                    breakStart = Instant.parse("2025-11-26T14:00:00Z"),
-                    breakEnd = Instant.parse("2025-11-26T14:30:00Z")
+                    breakStart = LocalDate(2025, 11, 26).at("14:00"),
+                    breakEnd = LocalDate(2025, 11, 26).at("14:30")
                 )
             )
         )
-        coEvery { repository.findById(10) } returns before
+        stubContext(before)
         coEvery { repository.getShiftsOnDate(1, LocalDate(2025, 11, 26)) } returns listOf(before)
         coEvery { repository.patchShift(eq(1), eq(10), any()) } returns before.copy(memo = "patched")
 
         val result = useCase(
             PatchShiftUseCase.Command(
-                userId = 1,
+                actorId = 1,
                 shiftId = 10,
                 workDate = LocalDate(2025, 11, 26),
-                startTime = Instant.parse("2025-11-26T14:00:00Z"), // 23:00+09
-                endTime = Instant.parse("2025-11-27T01:00:00Z"),   // 10:00+09
+                startTime = LocalDate(2025, 11, 26).at("14:00"),
+                endTime = LocalDate(2025, 11, 27).at("01:00"),
                 memo = "patched",
                 breaks = listOf(
                     PatchShiftUseCase.BreakPatchCommand(
                         id = null,
-                        breakStart = Instant.parse("2025-11-26T15:30:00Z"),
-                        breakEnd = Instant.parse("2025-11-26T16:00:00Z")
-                    ),
-                    PatchShiftUseCase.BreakPatchCommand(
-                        id = null,
-                        breakStart = Instant.parse("2025-11-26T20:30:00Z"),
-                        breakEnd = Instant.parse("2025-11-26T21:00:00Z")
+                        breakStart = LocalDate(2025, 11, 26).at("15:30"),
+                        breakEnd = LocalDate(2025, 11, 26).at("16:00")
                     )
                 )
             ),
@@ -166,65 +184,51 @@ class PatchShiftUseCaseTest {
     }
 
     @Test
-    fun `replaces existing breaks when ids are omitted`() = runTest {
-        val before = sampleShift("old").copy(
-            startTime = Instant.parse("2025-11-26T12:00:00Z"), // 21:00+09
-            endTime = Instant.parse("2025-11-27T00:00:00Z"),   // 09:00+09
-            breaks = listOf(
-                ShiftBreak(
-                    id = 70,
+    fun `rejects time patch that overlaps existing shift`() = runTest {
+        val before = sampleShift("old")
+        val conflicting = before.copy(
+            id = 99,
+            startTime = LocalDate(2025, 1, 1).at("07:00"),
+            endTime = LocalDate(2025, 1, 1).at("10:00")
+        )
+        stubContext(before)
+        coEvery { repository.getShiftsOnDate(1, before.workDate) } returns listOf(conflicting)
+
+        val error = assertFailsWith<DomainValidationException> {
+            useCase(
+                PatchShiftUseCase.Command(
+                    actorId = 1,
                     shiftId = 10,
-                    breakStart = Instant.parse("2025-11-26T12:30:00Z"),
-                    breakEnd = Instant.parse("2025-11-26T12:45:00Z")
-                )
+                    startTime = LocalDate(2025, 1, 1).at("08:00"),
+                    endTime = LocalDate(2025, 1, 1).at("11:00")
+                ),
+                TestAuditSupport.auditContext
             )
-        )
-        coEvery { repository.findById(10) } returns before
-        coEvery { repository.getShiftsOnDate(1, LocalDate(2025, 1, 1)) } returns emptyList()
-        coEvery { repository.patchShift(eq(1), eq(10), any()) } returns before.copy(memo = "new breaks")
+        }
+        assertEquals("OVERLAP", error.violations.first { it.code == "OVERLAP" }.code)
+    }
 
-        val result = useCase(
-            PatchShiftUseCase.Command(
-                userId = 1,
+    private fun stubContext(shift: Shift) {
+        coEvery { contextProvider.forUpdate(any(), any()) } returns ShiftUpdateContext(actor, actor, store, shift)
+    }
+
+    private fun sampleShift(memo: String): Shift = Shift(
+        id = 10,
+        userId = 1,
+        storeId = 1,
+        workDate = LocalDate(2025, 1, 1),
+        startTime = LocalDate(2025, 1, 1).at("09:00"),
+        endTime = LocalDate(2025, 1, 1).at("18:00"),
+        memo = memo,
+        breaks = listOf(
+            ShiftBreak(
+                id = 5,
                 shiftId = 10,
-                startTime = Instant.parse("2025-11-26T13:00:00Z"), // 22:00+09
-                endTime = Instant.parse("2025-11-27T00:00:00Z"),
-                breaks = listOf(
-                    PatchShiftUseCase.BreakPatchCommand(
-                        id = null,
-                        breakStart = Instant.parse("2025-11-26T14:00:00Z"),
-                        breakEnd = Instant.parse("2025-11-26T14:30:00Z")
-                    )
-                )
-            ),
-            TestAuditSupport.auditContext
+                breakStart = LocalDate(2025, 1, 1).at("13:00"),
+                breakEnd = LocalDate(2025, 1, 1).at("13:15")
         )
-
-        assertEquals("new breaks", result.memo)
-    }
-
-    private fun sampleShift(memo: String): Shift {
-        val start = Instant.parse("2025-01-01T09:00:00Z")
-        val end = Instant.parse("2025-01-01T18:00:00Z")
-        val breakStart = Instant.parse("2025-01-01T11:00:00Z")
-        val breakEnd = Instant.parse("2025-01-01T11:15:00Z")
-        return Shift(
-            id = 10,
-            userId = 1,
-            workDate = LocalDate(2025, 1, 1),
-            startTime = start,
-            endTime = end,
-            memo = memo,
-            breaks = listOf(
-                ShiftBreak(
-                    id = 5,
-                    shiftId = 10,
-                    breakStart = breakStart,
-                    breakEnd = breakEnd
-                )
-            ),
-            createdAt = start,
-            updatedAt = end
-        )
-    }
+        ),
+        createdAt = LocalDate(2025, 1, 1).at("00:00"),
+        updatedAt = LocalDate(2025, 1, 1).at("00:00")
+    )
 }

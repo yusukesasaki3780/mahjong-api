@@ -1,8 +1,10 @@
 package com.example
 
+import com.example.common.error.AccessDeniedException
 import com.example.common.error.DomainValidationException
 import com.example.common.error.ErrorResponse
 import com.example.presentation.dto.ValidationMessagesResponse
+import com.example.presentation.routes.shouldSkipDefaultErrorHandling
 import com.example.presentation.util.ValidationMessageResolver
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
@@ -14,7 +16,7 @@ import org.slf4j.event.Level
 import org.valiktor.ConstraintViolationException
 
 /**
- * 監視と例外ハンドリングの共通設定。
+ * 監視と共通エラーハンドリングの設定をまとめる。
  */
 fun Application.configureMonitoring() {
 
@@ -46,6 +48,7 @@ fun Application.configureMonitoring() {
         }
 
         status(HttpStatusCode.Unauthorized) { call, status ->
+            if (call.shouldSkipDefaultErrorHandling()) return@status
             call.respond(
                 status,
                 ErrorResponse(
@@ -54,7 +57,19 @@ fun Application.configureMonitoring() {
                 )
             )
         }
+
+        exception<AccessDeniedException> { call, cause ->
+            call.respond(
+                HttpStatusCode.Forbidden,
+                ErrorResponse(
+                    errorCode = "FORBIDDEN",
+                    message = cause.message ?: "You are not allowed to access this resource."
+                )
+            )
+        }
+
         status(HttpStatusCode.Forbidden) { call, status ->
+            if (call.shouldSkipDefaultErrorHandling()) return@status
             call.respond(
                 status,
                 ErrorResponse(
@@ -63,7 +78,9 @@ fun Application.configureMonitoring() {
                 )
             )
         }
+
         status(HttpStatusCode.NotFound) { call, status ->
+            if (call.shouldSkipDefaultErrorHandling()) return@status
             call.respond(
                 status,
                 ErrorResponse(
@@ -79,10 +96,9 @@ fun Application.configureMonitoring() {
                 HttpStatusCode.InternalServerError,
                 ErrorResponse(
                     errorCode = "INTERNAL_ERROR",
-                    message = "予期しないサーバーエラーが発生しました。"
+                    message = "予期しないエラーが発生しました。"
                 )
             )
         }
     }
 }
-

@@ -19,15 +19,22 @@ import kotlinx.datetime.plus
 object TestFixtures {
     private val now = Clock.System.now()
 
-    fun user(id: Long = 1, isAdmin: Boolean = false) = User(
+    fun user(
+        id: Long = 1,
+        storeId: Long = 1,
+        isAdmin: Boolean = false,
+        isDeleted: Boolean = false
+    ) = User(
         id = id,
         name = "User$id",
         nickname = "nickname$id",
+        storeId = storeId,
         storeName = "Store",
         prefectureCode = "01",
         email = "user$id@example.com",
         zooId = (100000 + id).toInt(),
         isAdmin = isAdmin,
+        isDeleted = isDeleted,
         createdAt = now,
         updatedAt = now
     )
@@ -76,7 +83,7 @@ object TestFixtures {
         results = listOf(gameResult())
     )
 
-    fun shift(id: Long = 5, userId: Long = 1): Shift {
+    fun shift(id: Long = 5, userId: Long = 1, storeId: Long = 1): Shift {
         val start = now
         val end = now.plus(2, DateTimeUnit.HOUR)
         val breakStart = start.plus(30, DateTimeUnit.MINUTE)
@@ -84,6 +91,7 @@ object TestFixtures {
         return Shift(
             id = id,
             userId = userId,
+            storeId = storeId,
             workDate = LocalDate(2025, 1, 1),
             startTime = start,
             endTime = end,

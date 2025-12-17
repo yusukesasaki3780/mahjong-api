@@ -28,6 +28,7 @@ class ExposedShiftRepositoryIntegrationTest : RepositoryTestBase() {
             Shift(
                 id = null,
                 userId = userId,
+                storeId = 1,
                 workDate = LocalDate(2025, 1, 1),
                 startTime = now,
                 endTime = now.plus(8, DateTimeUnit.HOUR),
@@ -78,6 +79,7 @@ class ExposedShiftRepositoryIntegrationTest : RepositoryTestBase() {
             Shift(
                 id = null,
                 userId = userId,
+                storeId = 1,
                 workDate = LocalDate(2025, 2, 1),
                 startTime = now,
                 endTime = now.plus(6, DateTimeUnit.HOUR),
@@ -104,11 +106,13 @@ class ExposedShiftRepositoryIntegrationTest : RepositoryTestBase() {
             UsersTable.insert {
                 it[name] = "ShiftUser"
                 it[nickname] = "su"
+                it[storeId] = 1
                 it[storeName] = "Store"
                 it[prefectureCode] = "01"
                 it[email] = "shift-${now.toEpochMilliseconds()}@example.com"
                 it[zooId] = (now.toEpochMilliseconds() % 900_000).toInt() + 1
                 it[UsersTable.isAdmin] = false
+                it[UsersTable.isDeleted] = false
                 it[createdAt] = now
                 it[updatedAt] = now
             } get UsersTable.userId

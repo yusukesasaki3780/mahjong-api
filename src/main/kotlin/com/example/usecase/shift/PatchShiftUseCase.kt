@@ -23,11 +23,14 @@ import kotlinx.datetime.LocalDate
 class PatchShiftUseCase(
     private val repository: ShiftRepository,
     private val specialHourlyWageRepository: SpecialHourlyWageRepository,
-    private val auditLogger: AuditLogger
+    private val auditLogger: AuditLogger,
+    private val shiftNotificationService: ShiftNotificationService,
+    private val contextProvider: ShiftContextProvider,
+    private val permissionService: ShiftPermissionService
 ) {
 
     data class Command(
-        val userId: Long,
+        val actorId: Long,
         val shiftId: Long,
         val workDate: LocalDate? = null,
         val startTime: Instant? = null,
@@ -46,22 +49,23 @@ class PatchShiftUseCase(
     )
 
     suspend operator fun invoke(command: Command, auditContext: AuditContext): Shift {
-        val before = repository.findById(command.shiftId)
-            ?: throw IllegalArgumentException("Shift not found: ${command.shiftId}")
+        val context = contextProvider.forUpdate(command.actorId, command.shiftId)
+        permissionService.ensureCanUpdate(context)
+        val before = context.shift
+        val targetUserId = context.targetUser.id ?: error("Target user missing id.")
         val specialWage = when {
             command.clearSpecialHourlyWage -> null
             command.specialHourlyWageId != null -> requireSpecialWage(before.userId, command.specialHourlyWageId)
             else -> before.specialHourlyWage
         }
         val normalizedBreaks = normalizeBreakCommands(command.breaks, before.breaks)
-        val normalizedCommand = command.copy(breaks = normalizedBreaks)
-        validate(normalizedCommand, before)
+        validate(command, before, normalizedBreaks)
 
         val patch = ShiftPatch(
-            workDate = normalizedCommand.workDate,
-            startTime = normalizedCommand.startTime,
-            endTime = normalizedCommand.endTime,
-            memo = normalizedCommand.memo,
+            workDate = command.workDate,
+            startTime = command.startTime,
+            endTime = command.endTime,
+            memo = command.memo,
             specialHourlyWageId = when {
                 command.clearSpecialHourlyWage -> null
                 command.specialHourlyWageId != null -> command.specialHourlyWageId
@@ -69,7 +73,7 @@ class PatchShiftUseCase(
             },
             specialHourlyWageIdSet = command.clearSpecialHourlyWage || command.specialHourlyWageId != null,
             updatedAt = Clock.System.now(),
-            breakPatches = normalizedCommand.breaks?.map {
+            breakPatches = normalizedBreaks?.map {
                 ShiftBreakPatch(
                     id = it.id,
                     breakStart = it.breakStart,
@@ -78,12 +82,18 @@ class PatchShiftUseCase(
                 )
             }
         )
-        val result = repository.patchShift(normalizedCommand.userId, normalizedCommand.shiftId, patch)
+        val result = repository.patchShift(targetUserId, command.shiftId, patch)
             .copy(specialHourlyWage = specialWage, specialHourlyWageId = specialWage?.id)
+
+        shiftNotificationService.notifyUpdated(
+            actorId = auditContext.performedBy,
+            targetUserId = before.userId,
+            shift = result
+        )
 
         auditLogger.log(
             entityType = "SHIFT",
-            entityId = normalizedCommand.shiftId,
+            entityId = command.shiftId,
             action = "PATCH",
             context = auditContext,
             before = before,
@@ -109,7 +119,11 @@ class PatchShiftUseCase(
         return deleteAll + requested
     }
 
-    private suspend fun validate(command: Command, before: Shift) {
+    private suspend fun validate(
+        command: Command,
+        before: Shift,
+        normalizedBreaks: List<BreakPatchCommand>?
+    ) {
         val violations = mutableListOf<FieldError>()
 
         val startProvided = command.startTime != null
@@ -133,18 +147,14 @@ class PatchShiftUseCase(
         val futureEnd = command.endTime ?: before.endTime
         val futureDate = command.workDate ?: before.workDate
 
-        val resultingBreaks = applyBreakPatches(before.breaks, command.breaks, violations)
+        val resultingBreaks = applyBreakPatches(before.breaks, normalizedBreaks, violations)
         validateBreakWindows(resultingBreaks, futureStart, futureEnd, violations)
 
         val overlap = repository.getShiftsOnDate(before.userId, futureDate)
             .filter { it.id != before.id }
-            .any { it.startTime < futureEnd && futureStart < it.endTime }
+            .any { ShiftOverlapChecker.overlaps(it.startTime, it.endTime, futureStart, futureEnd) }
         if (overlap) {
-            violations += FieldError(
-                field = "timeRange",
-                code = "SHIFT_OVERLAP",
-                message = "シフト時間帯が既存の勤務と重複しています"
-            )
+            violations += overlapError()
         }
 
         if (violations.isNotEmpty()) {
@@ -263,5 +273,10 @@ class PatchShiftUseCase(
                     )
                 )
             )
-}
 
+    private fun overlapError() = FieldError(
+        field = "timeRange",
+        code = "OVERLAP",
+        message = "同一日に時間が重複するシフトは登録できません。"
+    )
+}

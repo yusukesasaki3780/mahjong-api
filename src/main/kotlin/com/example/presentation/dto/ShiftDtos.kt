@@ -3,12 +3,12 @@
 package com.example.presentation.dto
 
 import com.example.domain.model.Shift
+import com.example.domain.model.ShiftSlotType
+import com.example.domain.model.ShiftRequirement
 import com.example.domain.model.SpecialHourlyWage
 import com.example.presentation.util.ShiftTimeCodec
-import kotlinx.datetime.DateTimeUnit
+import com.example.usecase.shift.GetShiftBoardUseCase
 import kotlinx.datetime.Instant
-import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.plus
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -89,11 +89,6 @@ data class ShiftResponse(
     companion object {
         fun from(shift: Shift): ShiftResponse {
             val aligned = ShiftTimeCodec.alignShiftWindow(shift.workDate, shift.startTime, shift.endTime)
-            val startLocal = LocalDateTime(shift.workDate, ShiftTimeCodec.toLocalTime(aligned.startInstant))
-            val endWorkDate = shift.workDate.plus(aligned.endDayOffset, DateTimeUnit.DAY)
-            val endLocal = LocalDateTime(endWorkDate, ShiftTimeCodec.toLocalTime(aligned.endInstant))
-            println("startLocal=$startLocal")
-            println("endLocal=$endLocal")
             return ShiftResponse(
                 id = shift.id!!,
                 date = shift.workDate.toString(),
@@ -139,3 +134,117 @@ data class ShiftStatsResponse(
     val avgHours: Double,
     val count: Int
 )
+
+@Serializable
+data class ShiftRequirementUpsertRequest(
+    val targetDate: String,
+    val shiftType: ShiftSlotType,
+    val startRequired: Int,
+    val endRequired: Int
+)
+
+@Serializable
+data class ShiftRequirementResponse(
+    val id: Long,
+    val storeId: Long,
+    val targetDate: String,
+    val shiftType: ShiftSlotType,
+    val startRequired: Int,
+    val endRequired: Int
+) {
+    companion object {
+        fun from(model: ShiftRequirement) = ShiftRequirementResponse(
+            id = model.id ?: error("Requirement ID is missing."),
+            storeId = model.storeId,
+            targetDate = model.targetDate.toString(),
+            shiftType = model.shiftType,
+            startRequired = model.startRequired,
+            endRequired = model.endRequired
+        )
+    }
+}
+
+@Serializable
+data class ShiftBoardUserDto(
+    val id: Long,
+    val name: String,
+    val nickname: String,
+    val zooId: Int,
+    val isDeleted: Boolean
+)
+
+@Serializable
+data class ShiftBoardShiftDto(
+    val id: Long,
+    val userId: Long,
+    val workDate: String,
+    val shiftType: ShiftSlotType,
+    val startTime: String,
+    val endTime: String,
+    val memo: String?
+)
+
+@Serializable
+data class ShiftBoardRequirementDto(
+    val id: Long?,
+    val targetDate: String,
+    val shiftType: ShiftSlotType,
+    val startRequired: Int,
+    val endRequired: Int,
+    val startActual: Int,
+    val endActual: Int,
+    val editable: Boolean
+)
+
+@Serializable
+data class ShiftBoardResponseDto(
+    val storeId: Long,
+    val startDate: String,
+    val endDate: String,
+    val users: List<ShiftBoardUserDto>,
+    val shifts: List<ShiftBoardShiftDto>,
+    val requirements: List<ShiftBoardRequirementDto>,
+    val editable: Boolean
+) {
+    companion object {
+        fun from(result: GetShiftBoardUseCase.Result): ShiftBoardResponseDto =
+            ShiftBoardResponseDto(
+                storeId = result.storeId,
+                startDate = result.startDate.toString(),
+                endDate = result.endDate.toString(),
+                users = result.users.map { user ->
+                    ShiftBoardUserDto(
+                        id = user.id,
+                        name = user.name,
+                        nickname = user.nickname,
+                        zooId = user.zooId,
+                        isDeleted = user.isDeleted
+                    )
+                },
+                shifts = result.shifts.map { shift ->
+                    ShiftBoardShiftDto(
+                        id = shift.id,
+                        userId = shift.userId,
+                        workDate = shift.workDate.toString(),
+                        shiftType = shift.shiftType,
+                        startTime = ShiftTimeCodec.format(shift.startTime),
+                        endTime = ShiftTimeCodec.format(shift.endTime),
+                        memo = shift.memo
+                    )
+                },
+                requirements = result.requirements.map { req ->
+                    ShiftBoardRequirementDto(
+                        id = req.id,
+                        targetDate = req.targetDate.toString(),
+                        shiftType = req.shiftType,
+                        startRequired = req.startRequired,
+                        endRequired = req.endRequired,
+                        startActual = req.startActual,
+                        endActual = req.endActual,
+                        editable = req.editable
+                    )
+                },
+                editable = result.editable
+            )
+    }
+}

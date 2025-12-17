@@ -83,7 +83,7 @@ object ValidationMessageResolver {
         "WEAK_PASSWORD" to "パスワードは8文字以上で、英大文字・英小文字・数字・記号のうち3種類以上を含めてください。",
         "TOTAL_INCOME_MISMATCH" to "総収入の計算結果が一致しません。",
         "STORE_NOT_FOUND" to "選択した店舗が存在しません。",
-        "SHIFT_OVERLAP" to "シフト時間帯が既存のシフトと重複しています。",
+        "OVERLAP" to "同一日に時間が重複するシフトは登録できません。",
         "INVALID_BREAK_RANGE" to "休憩終了時刻は開始時刻より後にしてください。",
         "BREAK_BEFORE_SHIFT" to "休憩開始時刻は勤務開始時刻以降に設定してください。",
         "BREAK_AFTER_SHIFT" to "休憩終了時刻は勤務終了時刻以内で指定してください。",

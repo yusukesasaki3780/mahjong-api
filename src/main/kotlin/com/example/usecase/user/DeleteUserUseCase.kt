@@ -20,6 +20,9 @@ class DeleteUserUseCase(
 
     suspend operator fun invoke(userId: Long, auditContext: AuditContext): Boolean {
         val before = userRepository.findById(userId) ?: return false
+        if (before.isDeleted) {
+            return false
+        }
         val deleted = userRepository.deleteUser(userId)
         if (deleted) {
             auditLogger.log(
@@ -28,10 +31,9 @@ class DeleteUserUseCase(
                 action = "DELETE",
                 context = auditContext,
                 before = before,
-                after = null
+                after = before.copy(isDeleted = true)
             )
         }
         return deleted
     }
 }
-

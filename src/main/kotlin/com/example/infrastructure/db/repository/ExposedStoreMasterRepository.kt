@@ -6,10 +6,11 @@ import com.example.infrastructure.db.tables.StoreMasterTable
 import kotlinx.coroutines.Dispatchers
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.inList
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 
 /**
  * ### このファイルの役割
@@ -30,6 +31,14 @@ class ExposedStoreMasterRepository : StoreMasterRepository {
             .select { StoreMasterTable.id eq id }
             .singleOrNull()
             ?.let(::toStoreMaster)
+    }
+
+    override suspend fun findByIds(ids: Collection<Long>): List<StoreMaster> = dbQuery {
+        if (ids.isEmpty()) emptyList() else
+            StoreMasterTable
+                .select { StoreMasterTable.id inList ids }
+                .orderBy(StoreMasterTable.storeName to SortOrder.ASC)
+                .map(::toStoreMaster)
     }
 
     private fun toStoreMaster(row: ResultRow): StoreMaster =

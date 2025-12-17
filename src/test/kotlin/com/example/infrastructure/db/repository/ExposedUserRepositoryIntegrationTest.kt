@@ -12,7 +12,6 @@ import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.transactions.transaction
 import kotlin.math.absoluteValue
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -51,7 +50,7 @@ class ExposedUserRepositoryIntegrationTest : RepositoryTestBase() {
         val deleted = repository.deleteUser(createdId)
         assertTrue(deleted)
         val fetched = repository.findById(createdId)
-        assertNull(fetched)
+        assertTrue(fetched?.isDeleted == true)
     }
 
     @Test
@@ -63,11 +62,13 @@ class ExposedUserRepositoryIntegrationTest : RepositoryTestBase() {
             UsersTable.insert {
                 it[name] = "WeeklyUser"
                 it[nickname] = "Weekly"
+                it[storeId] = 1
                 it[storeName] = "Store"
                 it[prefectureCode] = "01"
                 it[email] = "weekly@example.com"
                 it[zooId] = 123456
                 it[UsersTable.isAdmin] = false
+                it[UsersTable.isDeleted] = false
                 it[createdAt] = start
                 it[updatedAt] = start
             } get UsersTable.userId
@@ -120,22 +121,26 @@ class ExposedUserRepositoryIntegrationTest : RepositoryTestBase() {
     private fun sampleUser(
         name: String,
         nickname: String = "nick",
+        storeId: Long = 1,
         store: String = "Store",
         prefecture: String = "01",
         email: String = "$name@example.com",
         zooId: Int = ((name.hashCode().absoluteValue % 900000) + 1),
-        isAdmin: Boolean = false
+        isAdmin: Boolean = false,
+        isDeleted: Boolean = false
     ): User {
         val now = Clock.System.now()
         return User(
             id = null,
             name = name,
             nickname = nickname,
+            storeId = storeId,
             storeName = store,
             prefectureCode = prefecture,
             email = email,
             zooId = zooId,
             isAdmin = isAdmin,
+            isDeleted = isDeleted,
             createdAt = now,
             updatedAt = now
         )

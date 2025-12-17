@@ -62,11 +62,13 @@ class ExposedGameSettingsRepositoryIntegrationTest : RepositoryTestBase() {
             UsersTable.insert {
                 it[name] = "SettingsUser"
                 it[nickname] = "su"
+                it[storeId] = 1
                 it[storeName] = "Store"
                 it[prefectureCode] = "01"
                 it[email] = "settings-${now.toEpochMilliseconds()}@example.com"
                 it[zooId] = (now.toEpochMilliseconds() % 900_000).toInt() + 1
                 it[UsersTable.isAdmin] = false
+                it[UsersTable.isDeleted] = false
                 it[createdAt] = now
                 it[updatedAt] = now
             } get UsersTable.userId

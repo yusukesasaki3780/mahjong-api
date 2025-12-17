@@ -32,4 +32,19 @@ class StoreRoutesTest : RoutesTestBase() {
         val body = json.decodeFromString<List<StoreResponse>>(response.bodyAsText())
         assertEquals(listOf(1L, 2L), body.map { it.id })
     }
+
+    @Test
+    fun `accessible stores endpoint returns user stores`() = testApplication {
+        coEvery { getAccessibleStoresUseCase(1) } returns listOf(
+            TestFixtures.store(id = 5, name = "ヘルプ店")
+        )
+        installRoutes()
+
+        val response = client.get("/stores/accessible") {
+            withAuth(userId = 1)
+        }
+        assertEquals(HttpStatusCode.OK, response.status)
+        val body = json.decodeFromString<List<StoreResponse>>(response.bodyAsText())
+        assertEquals(listOf(5L), body.map { it.id })
+    }
 }

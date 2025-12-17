@@ -11,6 +11,7 @@ import kotlinx.serialization.Serializable
 data class Shift(
     val id: Long? = null,
     val userId: Long,
+    val storeId: Long,
     val workDate: LocalDate,
     val startTime: Instant,
     val endTime: Instant,

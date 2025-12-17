@@ -20,6 +20,7 @@ import io.ktor.server.auth.principal
 import io.ktor.server.request.host
 import io.ktor.server.request.path
 import io.ktor.server.response.respond
+import io.ktor.util.AttributeKey
 import java.time.YearMonth
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.Instant
@@ -159,6 +160,15 @@ internal fun ApplicationCall.buildAuditContext(actorId: Long): AuditContext {
     )
 }
 
+private val SkipDefaultErrorResponseKey = AttributeKey<Boolean>("SkipDefaultErrorResponse")
+
+internal fun ApplicationCall.skipDefaultErrorHandling() {
+    attributes.put(SkipDefaultErrorResponseKey, true)
+}
+
+internal fun ApplicationCall.shouldSkipDefaultErrorHandling(): Boolean =
+    attributes.contains(SkipDefaultErrorResponseKey) && attributes[SkipDefaultErrorResponseKey]
+
 internal suspend fun ApplicationCall.respondForbidden(
     message: String = "You are not allowed to access this resource."
 ) {
@@ -193,4 +203,3 @@ internal suspend fun ApplicationCall.respondInvalidYearMonth(paramName: String) 
         message = "$paramName は YYYY-MM 形式で入力してください。"
     )
 }
-

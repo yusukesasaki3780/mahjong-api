@@ -9,16 +9,25 @@
 import com.example.domain.model.AuditContext
 import com.example.domain.repository.ShiftRepository
 import com.example.infrastructure.logging.AuditLogger
-
 class DeleteShiftUseCase(
     private val repository: ShiftRepository,
-    private val auditLogger: AuditLogger
+    private val auditLogger: AuditLogger,
+    private val shiftNotificationService: ShiftNotificationService,
+    private val contextProvider: ShiftContextProvider,
+    private val permissionService: ShiftPermissionService
 ) {
 
-    suspend operator fun invoke(shiftId: Long, auditContext: AuditContext): Boolean {
-        val before = repository.findById(shiftId) ?: return false
+    suspend operator fun invoke(actorId: Long, shiftId: Long, auditContext: AuditContext): Boolean {
+        val context = contextProvider.forDelete(actorId, shiftId)
+        permissionService.ensureCanDelete(context)
+        val before = context.shift
         val deleted = repository.deleteShift(shiftId)
         if (deleted) {
+            shiftNotificationService.notifyDeleted(
+                actorId = auditContext.performedBy,
+                targetUserId = before.userId,
+                shift = before
+            )
             auditLogger.log(
                 entityType = "SHIFT",
                 entityId = shiftId,
@@ -31,4 +40,3 @@ class DeleteShiftUseCase(
         return deleted
     }
 }
-

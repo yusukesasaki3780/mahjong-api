@@ -12,7 +12,9 @@ import kotlinx.datetime.TimeZone
 
 class GetShiftStatsUseCase(
     private val shiftRepository: ShiftRepository,
-    private val timeZone: TimeZone = TimeZone.currentSystemDefault()
+    private val timeZone: TimeZone = TimeZone.currentSystemDefault(),
+    private val contextProvider: ShiftContextProvider,
+    private val permissionService: ShiftPermissionService
     ) {
 
     data class Result(
@@ -24,7 +26,10 @@ class GetShiftStatsUseCase(
         val shiftCount: Int
     )
 
-    suspend operator fun invoke(userId: Long, yearMonth: YearMonth): Result {
+    suspend operator fun invoke(actorId: Long, targetUserId: Long, yearMonth: YearMonth): Result {
+        val context = contextProvider.forUserView(actorId, targetUserId)
+        permissionService.ensureCanView(context)
+        val userId = context.primaryUser?.id ?: error("Target user missing id.")
         val shifts = shiftRepository.getMonthlyShifts(userId, yearMonth)
         val minutes = ShiftTimeCalculator.calculateMinutes(shifts, timeZone)
         val workDays = shifts.map { it.workDate }.toSet().size

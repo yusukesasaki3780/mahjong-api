@@ -65,4 +65,14 @@ class LoginUserUseCaseTest {
             useCase(LoginUserUseCase.Command(email = "user1@example.com", password = "bad"))
         }
     }
+
+    @Test
+    fun `deleted account throws dedicated error`() = runTest {
+        val user = TestFixtures.user(isDeleted = true)
+        coEvery { userRepository.findByEmail("user1@example.com") } returns user
+
+        assertFailsWith<LoginUserUseCase.DeletedAccountException> {
+            useCase(LoginUserUseCase.Command(email = "user1@example.com", password = "pw"))
+        }
+    }
 }

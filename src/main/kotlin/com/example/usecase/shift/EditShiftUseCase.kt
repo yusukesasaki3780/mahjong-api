@@ -23,12 +23,15 @@ import org.valiktor.validate
 class EditShiftUseCase(
     private val repository: ShiftRepository,
     private val specialHourlyWageRepository: SpecialHourlyWageRepository,
-    private val auditLogger: AuditLogger
+    private val auditLogger: AuditLogger,
+    private val shiftNotificationService: ShiftNotificationService,
+    private val contextProvider: ShiftContextProvider,
+    private val permissionService: ShiftPermissionService
 ) {
 
     data class Command(
+        val actorId: Long,
         val shiftId: Long,
-        val userId: Long,
         val workDate: LocalDate,
         val startTime: Instant,
         val endTime: Instant,
@@ -44,16 +47,18 @@ class EditShiftUseCase(
     )
 
     suspend operator fun invoke(command: Command, auditContext: AuditContext): Shift {
-        command.validate()
+        val context = contextProvider.forUpdate(command.actorId, command.shiftId)
+        permissionService.ensureCanUpdate(context)
+        val targetUserId = context.targetUser.id ?: error("Target user missing id.")
+        command.validate(targetUserId)
 
-        val before = repository.findById(command.shiftId)
-            ?: throw IllegalArgumentException("Shift not found: ${command.shiftId}")
-
-        val specialWage = command.specialHourlyWageId?.let { requireSpecialWage(command.userId, it) }
+        val before = context.shift
+        val specialWage = command.specialHourlyWageId?.let { requireSpecialWage(targetUserId, it) }
 
         val shift = Shift(
             id = command.shiftId,
-            userId = command.userId,
+            userId = targetUserId,
+            storeId = context.targetStore.id,
             workDate = command.workDate,
             startTime = command.startTime,
             endTime = command.endTime,
@@ -72,6 +77,12 @@ class EditShiftUseCase(
         )
         val result = repository.updateShift(shift)
 
+        shiftNotificationService.notifyUpdated(
+            actorId = auditContext.performedBy,
+            targetUserId = targetUserId,
+            shift = result
+        )
+
         auditLogger.log(
             entityType = "SHIFT",
             entityId = command.shiftId,
@@ -83,7 +94,7 @@ class EditShiftUseCase(
         return result
     }
 
-    private suspend fun Command.validate() {
+    private suspend fun Command.validate(targetUserId: Long) {
         validate(this) {
             validate(Command::startTime).isLessThan(endTime)
         }
@@ -127,15 +138,11 @@ class EditShiftUseCase(
             }
         }
 
-        val overlap = repository.getShiftsOnDate(userId, workDate)
+        val overlap = repository.getShiftsOnDate(targetUserId, workDate)
             .filter { it.id != shiftId }
-            .any { shift -> shift.startTime < endTime && startTime < shift.endTime }
+            .any { shift -> ShiftOverlapChecker.overlaps(shift.startTime, shift.endTime, startTime, endTime) }
         if (overlap) {
-            violations += FieldError(
-                field = "timeRange",
-                code = "SHIFT_OVERLAP",
-                message = "シフト時間帯が既存の勤務と重複しています"
-            )
+            violations += overlapError()
         }
 
         if (violations.isNotEmpty()) {
@@ -154,5 +161,10 @@ class EditShiftUseCase(
                     )
                 )
             )
-}
 
+    private fun overlapError() = FieldError(
+        field = "timeRange",
+        code = "OVERLAP",
+        message = "同一日に時間が重複するシフトは登録できません。"
+    )
+}

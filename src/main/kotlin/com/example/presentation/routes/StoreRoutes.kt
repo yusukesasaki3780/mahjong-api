@@ -1,6 +1,7 @@
 package com.example.presentation.routes
 
 import com.example.presentation.dto.StoreResponse
+import com.example.usecase.store.GetAccessibleStoresUseCase
 import com.example.usecase.store.GetStoreListUseCase
 import io.ktor.server.application.call
 import io.ktor.server.response.respond
@@ -17,6 +18,16 @@ fun Route.installStoreRoutes(
 ) {
     get("/stores") {
         val stores = getStoreListUseCase()
+        call.respond(stores.map(StoreResponse::from))
+    }
+}
+
+fun Route.installAccessibleStoreRoutes(
+    getAccessibleStoresUseCase: GetAccessibleStoresUseCase
+) {
+    get("/stores/accessible") {
+        val actorId = call.userId()
+        val stores = getAccessibleStoresUseCase(actorId)
         call.respond(stores.map(StoreResponse::from))
     }
 }

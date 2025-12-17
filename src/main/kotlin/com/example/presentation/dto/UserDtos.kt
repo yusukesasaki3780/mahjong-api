@@ -36,11 +36,13 @@ data class UserResponse(
     val id: Long,
     val name: String,
     val nickname: String,
+    val storeId: Long,
     val storeName: String,
     val prefectureCode: String,
     val email: String,
     val zooId: Int,
     val isAdmin: Boolean,
+    val isDeleted: Boolean,
     val createdAt: String,
     val updatedAt: String
 ) {
@@ -49,11 +51,13 @@ data class UserResponse(
             id = user.id!!,
             name = user.name,
             nickname = user.nickname,
+            storeId = user.storeId,
             storeName = user.storeName,
             prefectureCode = user.prefectureCode,
             email = user.email,
             zooId = user.zooId,
             isAdmin = user.isAdmin,
+            isDeleted = user.isDeleted,
             createdAt = user.createdAt.toString(),
             updatedAt = user.updatedAt.toString()
         )
@@ -66,7 +70,9 @@ data class AdminUserSummaryResponse(
     val name: String,
     val nickname: String,
     val email: String,
-    val storeName: String
+    val storeId: Long,
+    val storeName: String,
+    val isDeleted: Boolean
 ) {
     companion object {
         fun from(user: User) = AdminUserSummaryResponse(
@@ -74,7 +80,9 @@ data class AdminUserSummaryResponse(
             name = user.name,
             nickname = user.nickname,
             email = user.email,
-            storeName = user.storeName
+            storeId = user.storeId,
+            storeName = user.storeName,
+            isDeleted = user.isDeleted
         )
     }
 }

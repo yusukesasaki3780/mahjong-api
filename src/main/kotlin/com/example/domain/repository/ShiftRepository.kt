@@ -19,6 +19,7 @@ interface ShiftRepository {
     suspend fun getMonthlyShifts(userId: Long, yearMonth: YearMonth): List<Shift>
     suspend fun getShiftsOnDate(userId: Long, workDate: LocalDate): List<Shift>
     suspend fun getShiftsInRange(userId: Long, startDate: LocalDate, endDate: LocalDate): List<Shift>
+    suspend fun getShiftsByStore(storeId: Long, startDate: LocalDate, endDate: LocalDate): List<Shift>
 
     suspend fun getShiftBreaks(shiftId: Long): List<ShiftBreak>
 
@@ -26,4 +27,8 @@ interface ShiftRepository {
     suspend fun findById(shiftId: Long): Shift?
 
     suspend fun deleteAllForUser(userId: Long): Int
+
+    suspend fun userHasShiftInStore(userId: Long, storeId: Long): Boolean
+
+    suspend fun getStoreIdsForUser(userId: Long): Set<Long>
 }

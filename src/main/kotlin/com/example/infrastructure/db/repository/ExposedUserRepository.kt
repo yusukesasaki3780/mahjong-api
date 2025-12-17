@@ -7,17 +7,13 @@ import com.example.domain.model.User
 import com.example.domain.repository.UserPatch
 import com.example.domain.repository.UserRepository
 import com.example.infrastructure.db.tables.GameResultsTable
-import com.example.infrastructure.db.tables.GameSettingsTable
-import com.example.infrastructure.db.tables.ShiftBreaksTable
-import com.example.infrastructure.db.tables.ShiftsTable
 import com.example.infrastructure.db.tables.UsersTable
-import com.example.infrastructure.db.tables.UserCredentialsTable
 import kotlinx.coroutines.Dispatchers
+import kotlinx.datetime.Clock
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.avg
 import org.jetbrains.exposed.sql.count
-import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.innerJoin
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.or
@@ -26,7 +22,6 @@ import org.jetbrains.exposed.sql.sum
 import org.jetbrains.exposed.sql.update
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.greaterEq
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.inSubQuery
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNotNull
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.isNull
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.less
@@ -48,11 +43,13 @@ class ExposedUserRepository : UserRepository {
         val newId = UsersTable.insert { row ->
             row[name] = user.name
             row[nickname] = user.nickname
+            row[storeId] = user.storeId
             row[storeName] = user.storeName
             row[prefectureCode] = user.prefectureCode
             row[email] = user.email
             row[zooId] = user.zooId
             row[UsersTable.isAdmin] = user.isAdmin
+            row[UsersTable.isDeleted] = user.isDeleted
             row[createdAt] = user.createdAt
             row[updatedAt] = user.updatedAt
         } get UsersTable.userId
@@ -68,11 +65,13 @@ class ExposedUserRepository : UserRepository {
         UsersTable.update({ UsersTable.userId eq targetId }) { row ->
             row[name] = user.name
             row[nickname] = user.nickname
+            row[storeId] = user.storeId
             row[storeName] = user.storeName
             row[prefectureCode] = user.prefectureCode
             row[email] = user.email
             row[zooId] = user.zooId
             row[UsersTable.isAdmin] = user.isAdmin
+            row[UsersTable.isDeleted] = user.isDeleted
             row[createdAt] = user.createdAt
             row[updatedAt] = user.updatedAt
         }
@@ -103,18 +102,38 @@ class ExposedUserRepository : UserRepository {
     }
 
     override suspend fun deleteUser(userId: Long): Boolean = dbQuery {
-        GameResultsTable.deleteWhere { GameResultsTable.userId eq userId }
-        val shiftIdsQuery = ShiftsTable.slice(ShiftsTable.id).select { ShiftsTable.userId eq userId }
-        ShiftBreaksTable.deleteWhere { ShiftBreaksTable.shiftId inSubQuery shiftIdsQuery }
-        ShiftsTable.deleteWhere { ShiftsTable.userId eq userId }
-        GameSettingsTable.deleteWhere { GameSettingsTable.userId eq userId }
-        UserCredentialsTable.deleteWhere { UserCredentialsTable.userId eq userId }
-        UsersTable.deleteWhere { UsersTable.userId eq userId } > 0
+        UsersTable.update({ UsersTable.userId eq userId }) { row ->
+            row[UsersTable.isDeleted] = true
+            row[UsersTable.updatedAt] = Clock.System.now()
+        } > 0
     }
 
-    override suspend fun listNonAdminUsers(): List<User> = dbQuery {
+    override suspend fun restoreUser(userId: Long): Boolean = dbQuery {
+        UsersTable.update({ UsersTable.userId eq userId }) { row ->
+            row[UsersTable.isDeleted] = false
+            row[UsersTable.updatedAt] = Clock.System.now()
+        } > 0
+    }
+
+    override suspend fun listNonAdminUsers(
+        storeId: Long,
+        includeDeleted: Boolean
+    ): List<User> = dbQuery {
+        val baseCondition = (UsersTable.storeId eq storeId) and (UsersTable.isAdmin eq false)
+        val condition = if (includeDeleted) {
+            baseCondition
+        } else {
+            baseCondition and (UsersTable.isDeleted eq false)
+        }
         UsersTable
-            .select { UsersTable.isAdmin eq false }
+            .select { condition }
+            .map(::toUser)
+    }
+
+    override suspend fun findByIds(ids: Collection<Long>): List<User> = dbQuery {
+        if (ids.isEmpty()) emptyList()
+        else UsersTable
+            .select { UsersTable.userId inList ids }
             .map(::toUser)
     }
 
@@ -151,7 +170,8 @@ class ExposedUserRepository : UserRepository {
             .select {
                 (GameResultsTable.gameType eq gameType.name) and
                     lowerBound and
-                    upperBound
+                    upperBound and
+                    (UsersTable.isDeleted eq false)
             }
             .groupBy(UsersTable.userId, UsersTable.name, UsersTable.nickname, UsersTable.zooId)
             .map { row ->
@@ -179,11 +199,13 @@ class ExposedUserRepository : UserRepository {
             id = row[UsersTable.userId],
             name = row[UsersTable.name],
             nickname = row[UsersTable.nickname],
+            storeId = row[UsersTable.storeId],
             storeName = row[UsersTable.storeName],
             prefectureCode = row[UsersTable.prefectureCode].trim(),
             email = row[UsersTable.email],
             zooId = row[UsersTable.zooId],
             isAdmin = row[UsersTable.isAdmin],
+            isDeleted = row[UsersTable.isDeleted],
             createdAt = row[UsersTable.createdAt],
             updatedAt = row[UsersTable.updatedAt]
         )

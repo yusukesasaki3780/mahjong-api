@@ -10,11 +10,13 @@ object UsersTable : Table("users") {
     val userId = long("user_id").autoIncrement()
     val name = varchar("name", length = 100)
     val nickname = varchar("nickname", length = 100)
+    val storeId = reference("store_id", StoreMasterTable.id)
     val storeName = varchar("store_name", length = 150)
     val prefectureCode = varchar("prefecture_code", length = 2)
     val email = varchar("email", length = 255)
     val zooId = integer("zoo_id")
     val isAdmin = bool("is_admin").default(false)
+    val isDeleted = bool("is_deleted").default(false)
     val createdAt = timestamp("created_at")
     val updatedAt = timestamp("updated_at")
 

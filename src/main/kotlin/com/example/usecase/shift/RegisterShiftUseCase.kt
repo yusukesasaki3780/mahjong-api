@@ -8,6 +8,7 @@
 
 import com.example.common.error.DomainValidationException
 import com.example.common.error.FieldError
+import com.example.domain.model.AuditContext
 import com.example.domain.model.Shift
 import com.example.domain.model.ShiftBreak
 import com.example.domain.repository.ShiftRepository
@@ -23,11 +24,16 @@ import org.valiktor.validate
  */
 class RegisterShiftUseCase(
     private val repository: ShiftRepository,
-    private val specialHourlyWageRepository: SpecialHourlyWageRepository
+    private val specialHourlyWageRepository: SpecialHourlyWageRepository,
+    private val contextProvider: ShiftContextProvider,
+    private val shiftNotificationService: ShiftNotificationService,
+    private val permissionService: ShiftPermissionService
 ) {
 
     data class Command(
-        val userId: Long,
+        val actorId: Long,
+        val targetUserId: Long,
+        val requestedStoreId: Long?,
         val workDate: LocalDate,
         val startTime: Instant,
         val endTime: Instant,
@@ -41,13 +47,22 @@ class RegisterShiftUseCase(
         val breakEnd: Instant
     )
 
-    suspend operator fun invoke(command: Command): Shift {
-        command.validate()
+    suspend operator fun invoke(command: Command, auditContext: AuditContext): Shift {
+        val context = contextProvider.forCreate(
+            actorId = command.actorId,
+            targetUserId = command.targetUserId,
+            requestedStoreId = command.requestedStoreId
+        )
+        permissionService.ensureCanCreate(context)
+        val ownerId = context.targetUser.id ?: error("Target user missing id.")
+        val storeId = context.targetStore.id
+        command.validate(ownerId)
         val now = Clock.System.now()
-        val specialWage = command.specialHourlyWageId?.let { requireSpecialWage(command.userId, it) }
+        val specialWage = command.specialHourlyWageId?.let { requireSpecialWage(ownerId, it) }
         val shift = Shift(
             id = null,
-            userId = command.userId,
+            userId = ownerId,
+            storeId = storeId,
             workDate = command.workDate,
             startTime = command.startTime,
             endTime = command.endTime,
@@ -64,10 +79,16 @@ class RegisterShiftUseCase(
             createdAt = now,
             updatedAt = now
         )
-        return repository.insertShift(shift)
+        val created = repository.insertShift(shift)
+        shiftNotificationService.notifyCreated(
+            actorId = auditContext.performedBy,
+            targetUserId = ownerId,
+            shift = created
+        )
+        return created
     }
 
-    private suspend fun Command.validate() {
+    private suspend fun Command.validate(ownerId: Long) {
         validate(this) {
             validate(Command::startTime).isLessThan(endTime)
         }
@@ -80,12 +101,8 @@ class RegisterShiftUseCase(
             violations = violations
         )
 
-        if (hasShiftOverlap(userId, workDate, startTime, endTime, null)) {
-            violations += FieldError(
-                field = "timeRange",
-                code = "SHIFT_OVERLAP",
-                message = "シフト時間帯が既存のシフトと重複しています。"
-            )
+        if (hasShiftOverlap(ownerId, workDate, startTime, endTime, null)) {
+            violations += overlapError()
         }
 
         if (violations.isNotEmpty()) {
@@ -145,14 +162,16 @@ class RegisterShiftUseCase(
         end: Instant,
         excludeShiftId: Long?
     ): Boolean {
-        val existing = repository.getShiftsOnDate(userId, workDate)
-        return existing
+        return repository.getShiftsOnDate(userId, workDate)
             .filter { it.id != excludeShiftId }
-            .any { overlap(it.startTime, it.endTime, start, end) }
+            .any { ShiftOverlapChecker.overlaps(it.startTime, it.endTime, start, end) }
     }
 
-    private fun overlap(aStart: Instant, aEnd: Instant, bStart: Instant, bEnd: Instant): Boolean =
-        bStart < aEnd && aStart < bEnd
+    private fun overlapError() = FieldError(
+        field = "timeRange",
+        code = "OVERLAP",
+        message = "同一日に時間が重複するシフトは登録できません。"
+    )
 
     private suspend fun requireSpecialWage(userId: Long, specialWageId: Long) =
         specialHourlyWageRepository.findById(specialWageId)?.takeIf { it.userId == userId }
@@ -166,4 +185,3 @@ class RegisterShiftUseCase(
                 )
             )
 }
-

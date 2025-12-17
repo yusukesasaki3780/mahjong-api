@@ -34,6 +34,7 @@ class ExposedShiftRepository : ShiftRepository {
     override suspend fun insertShift(shift: Shift): Shift = dbQuery {
         val shiftId = ShiftsTable.insert { row ->
             row[userId] = shift.userId
+            row[storeId] = shift.storeId
             row[workDate] = shift.workDate
             row[startTime] = shift.startTime
             row[endTime] = shift.endTime
@@ -52,6 +53,7 @@ class ExposedShiftRepository : ShiftRepository {
         val targetId = shift.id ?: error("Shift id is required for update.")
         ShiftsTable.update({ ShiftsTable.id eq targetId }) { row ->
             row[userId] = shift.userId
+            row[storeId] = shift.storeId
             row[workDate] = shift.workDate
             row[startTime] = shift.startTime
             row[endTime] = shift.endTime
@@ -88,6 +90,10 @@ class ExposedShiftRepository : ShiftRepository {
 
     override suspend fun getShiftsInRange(userId: Long, startDate: LocalDate, endDate: LocalDate): List<Shift> = dbQuery {
         loadShiftsInRange(userId, startDate, endDate)
+    }
+
+    override suspend fun getShiftsByStore(storeId: Long, startDate: LocalDate, endDate: LocalDate): List<Shift> = dbQuery {
+        loadShiftsByStore(storeId, startDate, endDate)
     }
 
     override suspend fun getShiftBreaks(shiftId: Long): List<ShiftBreak> = dbQuery {
@@ -138,6 +144,23 @@ class ExposedShiftRepository : ShiftRepository {
         }
     }
 
+    private fun loadShiftsByStore(storeId: Long, start: LocalDate, end: LocalDate): List<Shift> {
+        val rows = ShiftsTable
+            .select {
+                (ShiftsTable.storeId eq storeId) and
+                    (ShiftsTable.workDate greaterEq start) and
+                    (ShiftsTable.workDate lessEq end)
+            }
+            .toList()
+        val specialAssignments = fetchSpecialAssignments(rows.map { it[ShiftsTable.id] })
+        val breakMap = fetchBreaksByShiftIds(rows.map { it[ShiftsTable.id] })
+        return rows.map { row ->
+            val assignment = specialAssignments[row[ShiftsTable.id]]
+            val shift = toShift(row, assignment?.special, assignment?.specialId)
+            shift.copy(breaks = breakMap[shift.id] ?: emptyList())
+        }
+    }
+
     private fun fetchShift(id: Long): Shift =
         fetchShiftOrNull(id) ?: error("Shift not found: $id")
 
@@ -154,6 +177,23 @@ class ExposedShiftRepository : ShiftRepository {
 
     override suspend fun deleteAllForUser(userId: Long): Int = dbQuery {
         ShiftsTable.deleteWhere { ShiftsTable.userId eq userId }
+    }
+
+    override suspend fun userHasShiftInStore(userId: Long, storeId: Long): Boolean = dbQuery {
+        ShiftsTable
+            .select {
+                (ShiftsTable.userId eq userId) and (ShiftsTable.storeId eq storeId)
+            }
+            .limit(1)
+            .any()
+    }
+
+    override suspend fun getStoreIdsForUser(userId: Long): Set<Long> = dbQuery {
+        ShiftsTable
+            .slice(ShiftsTable.storeId)
+            .select { ShiftsTable.userId eq userId }
+            .map { it[ShiftsTable.storeId] }
+            .toSet()
     }
 
     private fun ensureShiftOwnedByUser(shiftId: Long, userId: Long) {
@@ -220,6 +260,7 @@ class ExposedShiftRepository : ShiftRepository {
         Shift(
             id = row[ShiftsTable.id],
             userId = row[ShiftsTable.userId],
+            storeId = row[ShiftsTable.storeId],
             workDate = row[ShiftsTable.workDate],
             startTime = row[ShiftsTable.startTime],
             endTime = row[ShiftsTable.endTime],

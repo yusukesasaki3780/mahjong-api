@@ -11,10 +11,15 @@ import com.example.domain.repository.ShiftRepository
 import kotlinx.datetime.LocalDate
 
 class GetShiftRangeUseCase(
-    private val repository: ShiftRepository
+    private val repository: ShiftRepository,
+    private val contextProvider: ShiftContextProvider,
+    private val permissionService: ShiftPermissionService
 ) {
-    suspend operator fun invoke(userId: Long, startDate: LocalDate, endDate: LocalDate): List<Shift> {
+    suspend operator fun invoke(actorId: Long, targetUserId: Long, startDate: LocalDate, endDate: LocalDate): List<Shift> {
         require(!startDate.isAfter(endDate)) { "startDate must be before or equal to endDate" }
+        val context = contextProvider.forUserView(actorId, targetUserId)
+        permissionService.ensureCanView(context)
+        val userId = context.primaryUser?.id ?: error("Target user missing id.")
         return repository.getShiftsInRange(userId, startDate, endDate)
     }
 

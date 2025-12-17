@@ -16,6 +16,12 @@ object ShiftsTable : Table("shifts") {
         onDelete = ReferenceOption.CASCADE,
         onUpdate = ReferenceOption.RESTRICT
     )
+    val storeId = reference(
+        name = "store_id",
+        refColumn = StoreMasterTable.id,
+        onDelete = ReferenceOption.RESTRICT,
+        onUpdate = ReferenceOption.RESTRICT
+    )
     val workDate = date("work_date")
     val startTime = timestamp("start_time")
     val endTime = timestamp("end_time")

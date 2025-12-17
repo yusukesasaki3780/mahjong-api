@@ -11,11 +11,13 @@ data class User(
     val id: Long? = null,
     val name: String,
     val nickname: String,
+    val storeId: Long,
     val storeName: String,
     val prefectureCode: String,
     val email: String,
     val zooId: Int,
     val isAdmin: Boolean,
+    val isDeleted: Boolean,
     val createdAt: Instant,
     val updatedAt: Instant
 )

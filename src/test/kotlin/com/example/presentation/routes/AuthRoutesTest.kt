@@ -158,7 +158,7 @@ class AuthRoutesTest : RoutesTestBase() {
         assertEquals(HttpStatusCode.BadRequest, response.status)
         val raw = response.bodyAsText()
         val body = Json.decodeFromString<ErrorResponse>(raw)
-        assertEquals("ID またはパスワードが不正です。", body.message, "Actual response: $raw")
+        assertEquals("LOGIN_FAILED", body.errorCode)
     }
 
     @Test
@@ -178,5 +178,19 @@ class AuthRoutesTest : RoutesTestBase() {
         }
         assertEquals(HttpStatusCode.TooManyRequests, response.status)
         assertTrue(response.bodyAsText().contains("一定回数ログインに失敗したため、しばらくログインできません。"))
+    }
+
+    @Test
+    fun `deleted account returns forbidden`() = testApplication {
+        coEvery { loginUserUseCase.invoke(any()) } throws LoginUserUseCase.DeletedAccountException()
+        installRoutes()
+
+        val response = client.post("/auth/login") {
+            contentType(ContentType.Application.Json)
+            setBody("""{"email":"user1@example.com","password":"pw"}""")
+        }
+        assertEquals(HttpStatusCode.Forbidden, response.status)
+        val body = Json.decodeFromString<ErrorResponse>(response.bodyAsText())
+        assertEquals("ACCOUNT_DELETED", body.errorCode)
     }
 }

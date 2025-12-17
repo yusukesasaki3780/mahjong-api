@@ -1,16 +1,15 @@
 package com.example.usecase.user
 
-/**
- * ### このファイルの役割
- * - 管理者が一般ユーザーアカウントを削除するドメインルールをまとめたユースケースです。
- * - 管理者自身や他の管理者を削除できないようにバリデーションを行います。
- */
-
 import com.example.common.error.DomainValidationException
 import com.example.common.error.FieldError
 import com.example.domain.model.AuditContext
 import com.example.domain.repository.UserRepository
 
+/**
+ * 管理者によるユーザー削除ユースケース。
+ * - 自身や他店舗のメンバーは削除できない。
+ * - 実際の削除処理と監査記録は DeleteUserUseCase に委譲する。
+ */
 class AdminDeleteUserUseCase(
     private val userRepository: UserRepository,
     private val deleteUserUseCase: DeleteUserUseCase
@@ -18,6 +17,7 @@ class AdminDeleteUserUseCase(
 
     suspend operator fun invoke(
         adminId: Long,
+        adminStoreId: Long,
         targetUserId: Long,
         auditContext: AuditContext
     ): Boolean {
@@ -29,6 +29,12 @@ class AdminDeleteUserUseCase(
         if (target.isAdmin) {
             throw validationError("userId", "ADMIN_DELETE_FORBIDDEN", "管理者アカウントは削除できません。")
         }
+        if (target.storeId != adminStoreId) {
+            throw validationError("userId", "DIFFERENT_STORE", "他店舗のメンバーは削除できません。")
+        }
+        if (target.isDeleted) {
+            return false
+        }
 
         return deleteUserUseCase(targetUserId, auditContext)
     }
@@ -39,4 +45,3 @@ class AdminDeleteUserUseCase(
             message = message
         )
 }
-

@@ -18,6 +18,12 @@ import com.example.usecase.prefecture.GetPrefectureListUseCase
 import com.example.usecase.salary.CalculateMonthlySalaryUseCase
 import com.example.usecase.settings.*
 import com.example.usecase.shift.*
+import com.example.usecase.notification.DeleteNotificationUseCase
+import com.example.usecase.notification.GetNotificationsUseCase
+import com.example.usecase.notification.GetUnreadNotificationCountUseCase
+import com.example.usecase.notification.MarkAllNotificationsReadUseCase
+import com.example.usecase.notification.MarkNotificationReadUseCase
+import com.example.usecase.store.GetAccessibleStoresUseCase
 import com.example.usecase.store.GetStoreListUseCase
 import com.example.usecase.user.*
 import io.ktor.http.*
@@ -100,6 +106,8 @@ fun Application.module() {
     val gameResultRepository = ExposedGameResultRepository()
     val shiftRepository = ExposedShiftRepository()
     val specialHourlyWageRepository = ExposedSpecialHourlyWageRepository()
+    val shiftRequirementRepository = ExposedShiftRequirementRepository()
+    val notificationRepository = ExposedNotificationRepository()
     val storeMasterRepository = ExposedStoreMasterRepository()
     val prefectureRepository = ExposedPrefectureRepository()
     val advancePaymentRepository = ExposedAdvancePaymentRepository()
@@ -118,15 +126,13 @@ fun Application.module() {
     val patchUserUseCase = PatchUserUseCase(userRepository, userCredentialRepository, auditLogger)
     val deleteUserUseCase = DeleteUserUseCase(userRepository, auditLogger)
     val deleteMyAccountUseCase = DeleteMyAccountUseCase(
-        gameResultRepository = gameResultRepository,
-        shiftRepository = shiftRepository,
-        advancePaymentRepository = advancePaymentRepository,
         refreshTokenRepository = refreshTokenRepository,
         deleteUserUseCase = deleteUserUseCase
     )
     val listGeneralUsersUseCase = ListGeneralUsersUseCase(userRepository)
     val adminDeleteUserUseCase = AdminDeleteUserUseCase(userRepository, deleteUserUseCase)
     val adminResetUserPasswordUseCase = AdminResetUserPasswordUseCase(userRepository, userCredentialRepository)
+    val adminRestoreUserUseCase = AdminRestoreUserUseCase(userRepository, auditLogger)
 
     val getGameSettingsUseCase = GetGameSettingsUseCase(gameSettingsRepository)
     val updateGameSettingsUseCase = UpdateGameSettingsUseCase(gameSettingsRepository, auditLogger)
@@ -146,14 +152,24 @@ fun Application.module() {
     val getAdvancePaymentUseCase = GetAdvancePaymentUseCase(advancePaymentRepository)
     val upsertAdvancePaymentUseCase = UpsertAdvancePaymentUseCase(advancePaymentRepository, auditLogger)
 
-    val registerShiftUseCase = RegisterShiftUseCase(shiftRepository, specialHourlyWageRepository)
-    val editShiftUseCase = EditShiftUseCase(shiftRepository, specialHourlyWageRepository, auditLogger)
-    val patchShiftUseCase = PatchShiftUseCase(shiftRepository, specialHourlyWageRepository, auditLogger)
-    val deleteShiftUseCase = DeleteShiftUseCase(shiftRepository, auditLogger)
-    val getMonthlyShiftUseCase = GetMonthlyShiftUseCase(shiftRepository)
-    val getDailyShiftUseCase = GetDailyShiftUseCase(shiftRepository)
-    val getShiftRangeUseCase = GetShiftRangeUseCase(shiftRepository)
-    val getShiftStatsUseCase = GetShiftStatsUseCase(shiftRepository)
+    val shiftNotificationService = ShiftNotificationService(userRepository, notificationRepository)
+    val shiftPermissionService = ShiftPermissionService()
+    val shiftContextProvider = ShiftContextProvider(userRepository, shiftRepository, storeMasterRepository)
+    val registerShiftUseCase = RegisterShiftUseCase(shiftRepository, specialHourlyWageRepository, shiftContextProvider, shiftNotificationService, shiftPermissionService)
+    val editShiftUseCase = EditShiftUseCase(shiftRepository, specialHourlyWageRepository, auditLogger, shiftNotificationService, shiftContextProvider, shiftPermissionService)
+    val patchShiftUseCase = PatchShiftUseCase(shiftRepository, specialHourlyWageRepository, auditLogger, shiftNotificationService, shiftContextProvider, shiftPermissionService)
+    val deleteShiftUseCase = DeleteShiftUseCase(shiftRepository, auditLogger, shiftNotificationService, shiftContextProvider, shiftPermissionService)
+    val getMonthlyShiftUseCase = GetMonthlyShiftUseCase(shiftRepository, shiftContextProvider, shiftPermissionService)
+    val getDailyShiftUseCase = GetDailyShiftUseCase(shiftRepository, shiftContextProvider, shiftPermissionService)
+    val getShiftRangeUseCase = GetShiftRangeUseCase(shiftRepository, shiftContextProvider, shiftPermissionService)
+    val getShiftStatsUseCase = GetShiftStatsUseCase(shiftRepository, TimeZone.currentSystemDefault(), shiftContextProvider, shiftPermissionService)
+    val getShiftBoardUseCase = GetShiftBoardUseCase(userRepository, shiftRepository, shiftRequirementRepository, shiftContextProvider, shiftPermissionService)
+    val upsertShiftRequirementUseCase = UpsertShiftRequirementUseCase(shiftRequirementRepository)
+    val getNotificationsUseCase = GetNotificationsUseCase(notificationRepository)
+    val markNotificationReadUseCase = MarkNotificationReadUseCase(notificationRepository)
+    val markAllNotificationsReadUseCase = MarkAllNotificationsReadUseCase(notificationRepository)
+    val deleteNotificationUseCase = DeleteNotificationUseCase(notificationRepository)
+    val getUnreadNotificationCountUseCase = GetUnreadNotificationCountUseCase(notificationRepository)
 
     val listSpecialHourlyWagesUseCase = ListSpecialHourlyWagesUseCase(specialHourlyWageRepository)
     val createSpecialHourlyWageUseCase = CreateSpecialHourlyWageUseCase(specialHourlyWageRepository)
@@ -176,6 +192,7 @@ fun Application.module() {
 
     val loginAttemptTracker = LoginAttemptTracker()
     val getStoreListUseCase = GetStoreListUseCase(storeMasterRepository)
+    val getAccessibleStoresUseCase = GetAccessibleStoresUseCase(userRepository, storeMasterRepository, shiftRepository)
     val getPrefectureListUseCase = GetPrefectureListUseCase(prefectureRepository)
 
     val rootRoutes = RootRoutes(
@@ -189,6 +206,7 @@ fun Application.module() {
         listGeneralUsersUseCase,
         adminDeleteUserUseCase,
         adminResetUserPasswordUseCase,
+        adminRestoreUserUseCase,
         getGameSettingsUseCase,
         updateGameSettingsUseCase,
         patchGameSettingsUseCase,
@@ -211,12 +229,20 @@ fun Application.module() {
         patchShiftUseCase,
         deleteShiftUseCase,
         getMonthlyShiftUseCase,
+        getShiftBoardUseCase,
         getDailyShiftUseCase,
         getShiftRangeUseCase,
         getShiftStatsUseCase,
+        upsertShiftRequirementUseCase,
+        getNotificationsUseCase,
+        markNotificationReadUseCase,
+        markAllNotificationsReadUseCase,
+        deleteNotificationUseCase,
+        getUnreadNotificationCountUseCase,
         calculateMonthlySalaryUseCase,
         getDashboardSummaryUseCase,
         getStoreListUseCase,
+        getAccessibleStoresUseCase,
         getPrefectureListUseCase,
         loginAttemptTracker,
         refreshAccessTokenUseCase,

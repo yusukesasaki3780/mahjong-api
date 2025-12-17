@@ -2,17 +2,22 @@ package com.example.infrastructure.db.repository
 
 import com.example.infrastructure.db.tables.GameResultsTable
 import com.example.infrastructure.db.tables.GameSettingsTable
+import com.example.infrastructure.db.tables.NotificationsTable
 import com.example.infrastructure.db.tables.ShiftBreaksTable
+import com.example.infrastructure.db.tables.ShiftRequirementsTable
 import com.example.infrastructure.db.tables.ShiftSpecialAllowancesTable
 import com.example.infrastructure.db.tables.ShiftsTable
 import com.example.infrastructure.db.tables.SpecialHourlyWagesTable
+import com.example.infrastructure.db.tables.StoreMasterTable
 import com.example.infrastructure.db.tables.UserCredentialsTable
 import com.example.infrastructure.db.tables.UsersTable
 import java.util.UUID
 import kotlinx.coroutines.test.runTest
+import kotlinx.datetime.Clock
 import org.h2.jdbcx.JdbcConnectionPool
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
 
@@ -39,8 +44,18 @@ abstract class RepositoryTestBase {
                 SpecialHourlyWagesTable,
                 ShiftsTable,
                 ShiftBreaksTable,
-                ShiftSpecialAllowancesTable
+                ShiftSpecialAllowancesTable,
+                StoreMasterTable,
+                ShiftRequirementsTable,
+                NotificationsTable
             )
+            val now = Clock.System.now()
+            StoreMasterTable.insert {
+                it[id] = 1
+                it[storeName] = "TestStore"
+                it[createdAt] = now
+                it[updatedAt] = now
+            }
         }
 
         testBody()

@@ -2,19 +2,26 @@
 
 import com.example.presentation.dto.PatchShiftBreakRequest
 import com.example.presentation.dto.PatchShiftRequest
+import com.example.presentation.dto.ShiftBoardResponseDto
 import com.example.presentation.dto.ShiftBreakRequest
 import com.example.presentation.dto.ShiftRequest
+import com.example.presentation.dto.ShiftRequirementResponse
+import com.example.presentation.dto.ShiftRequirementUpsertRequest
 import com.example.presentation.dto.ShiftResponse
 import com.example.presentation.dto.ShiftStatsResponse
 import com.example.presentation.util.ShiftTimeCodec
+import com.example.common.error.DomainValidationException
 import com.example.usecase.shift.DeleteShiftUseCase
 import com.example.usecase.shift.EditShiftUseCase
 import com.example.usecase.shift.GetDailyShiftUseCase
 import com.example.usecase.shift.GetMonthlyShiftUseCase
+import com.example.usecase.shift.GetShiftBoardUseCase
 import com.example.usecase.shift.GetShiftRangeUseCase
 import com.example.usecase.shift.GetShiftStatsUseCase
 import com.example.usecase.shift.PatchShiftUseCase
 import com.example.usecase.shift.RegisterShiftUseCase
+import com.example.usecase.shift.UpsertShiftRequirementUseCase
+import com.example.usecase.user.GetUserUseCase
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.server.application.call
@@ -31,40 +38,44 @@ import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
+import kotlinx.datetime.TimeZone
 import kotlinx.datetime.plus
+import kotlinx.datetime.toLocalDateTime
 import kotlin.math.roundToInt
 
 fun Route.installShiftRoutes(
+    getUserUseCase: GetUserUseCase,
     getMonthlyShiftUseCase: GetMonthlyShiftUseCase,
     getDailyShiftUseCase: GetDailyShiftUseCase,
     getShiftRangeUseCase: GetShiftRangeUseCase,
     getShiftStatsUseCase: GetShiftStatsUseCase,
+    getShiftBoardUseCase: GetShiftBoardUseCase,
     registerShiftUseCase: RegisterShiftUseCase,
     editShiftUseCase: EditShiftUseCase,
     patchShiftUseCase: PatchShiftUseCase,
-    deleteShiftUseCase: DeleteShiftUseCase
+    deleteShiftUseCase: DeleteShiftUseCase,
+    upsertShiftRequirementUseCase: UpsertShiftRequirementUseCase
 ) {
     route("/users/{userId}/shifts") {
         get {
-            val userId = call.userIdOrNull() ?: return@get call.respondInvalidUserId()
-            call.requireUserAccess(userId) ?: return@get
-
+            val targetUserId = call.userIdOrNull() ?: return@get call.respondInvalidUserId()
+            val actorId = call.userId()
             val rangeType = call.request.queryParameters["rangeType"]?.lowercase() ?: "month"
             val shifts = when (rangeType) {
                 "month" -> {
                     val yearMonth = call.queryYearMonth()
                         ?: return@get call.respondMissingYearMonth()
-                    getMonthlyShiftUseCase(userId, yearMonth)
+                    getMonthlyShiftUseCase(actorId, targetUserId, yearMonth)
                 }
 
                 "week" -> {
                     val range = call.requireLocalDateRange("start", "end") ?: return@get
-                    getShiftRangeUseCase(userId, range.first, range.second)
+                    getShiftRangeUseCase(actorId, targetUserId, range.first, range.second)
                 }
 
                 "day" -> {
                     val date = call.requireLocalDateParam("date") ?: return@get
-                    getDailyShiftUseCase(userId, date)
+                    getDailyShiftUseCase(actorId, targetUserId, date)
                 }
 
                 else -> {
@@ -80,10 +91,10 @@ fun Route.installShiftRoutes(
         }
 
         get("/stats") {
-            val userId = call.userIdOrNull() ?: return@get call.respondInvalidUserId()
-            call.requireUserAccess(userId) ?: return@get
+            val targetUserId = call.userIdOrNull() ?: return@get call.respondInvalidUserId()
+            val actorId = call.userId()
             val yearMonth = call.queryYearMonth() ?: return@get call.respondMissingYearMonth()
-            val stats = getShiftStatsUseCase(userId, yearMonth)
+            val stats = getShiftStatsUseCase(actorId, targetUserId, yearMonth)
             val totalHours = stats.totalMinutes.toDouble().div(60.0).roundToTenths()
             val nightHours = stats.nightMinutes.toDouble().div(60.0).roundToTenths()
             val count = stats.shiftCount
@@ -99,16 +110,31 @@ fun Route.installShiftRoutes(
         }
 
         post {
-            val userId = call.userIdOrNull() ?: return@post call.respondInvalidUserId()
-            call.requireUserAccess(userId) ?: return@post
+            val targetUserId = call.userIdOrNull() ?: return@post call.respondInvalidUserId()
+            val actorId = call.userId()
+            val auditContext = call.buildAuditContext(actorId)
             val request = call.receive<ShiftRequest>()
             val workDate = LocalDate.parse(request.workDate)
             val shiftTimes = call.parseShiftTimes(workDate, request.startTime, request.endTime) ?: return@post
             val breakWindows = call.parseBreakWindows(workDate, request.breaks, shiftTimes) ?: return@post
+            val requestedStoreId = call.request.queryParameters["storeId"]
+                ?.takeUnless { it.isBlank() }
+                ?.let { raw ->
+                    raw.toLongOrNull() ?: run {
+                        call.respondValidationError(
+                            field = "storeId",
+                            code = "INVALID_STORE_ID",
+                            message = "storeId は数値で指定してください。"
+                        )
+                        return@post
+                    }
+                }
 
             val created = registerShiftUseCase(
                 RegisterShiftUseCase.Command(
-                    userId = userId,
+                    actorId = actorId,
+                    targetUserId = targetUserId,
+                    requestedStoreId = requestedStoreId,
                     workDate = workDate,
                     startTime = shiftTimes.start,
                     endTime = shiftTimes.end,
@@ -120,14 +146,16 @@ fun Route.installShiftRoutes(
                         )
                     },
                     specialHourlyWageId = request.specialHourlyWageId
-                )
+                ),
+                auditContext
             )
             call.respond(HttpStatusCode.Created, ShiftResponse.from(created))
         }
 
         put("/{shiftId}") {
-            val userId = call.userIdOrNull() ?: return@put call.respondInvalidUserId()
-            val auditContext = call.requireAuditContext(userId) ?: return@put
+            call.userIdOrNull() ?: return@put call.respondInvalidUserId()
+            val actorId = call.userId()
+            val auditContext = call.buildAuditContext(actorId)
             val shiftId = call.parameters["shiftId"]?.toLongOrNull()
                 ?: return@put call.respondValidationError("shiftId", "INVALID_SHIFT_ID", "shiftId は数値で指定してください。")
             val request = call.receive<ShiftRequest>()
@@ -137,8 +165,8 @@ fun Route.installShiftRoutes(
 
             val updated = editShiftUseCase(
                 EditShiftUseCase.Command(
+                    actorId = actorId,
                     shiftId = shiftId,
-                    userId = userId,
                     workDate = workDate,
                     startTime = shiftTimes.start,
                     endTime = shiftTimes.end,
@@ -158,8 +186,9 @@ fun Route.installShiftRoutes(
         }
 
         patch("/{shiftId}") {
-            val userId = call.userIdOrNull() ?: return@patch call.respondInvalidUserId()
-            val auditContext = call.requireAuditContext(userId) ?: return@patch
+            call.userIdOrNull() ?: return@patch call.respondInvalidUserId()
+            val actorId = call.userId()
+            val auditContext = call.buildAuditContext(actorId)
             val shiftId = call.parameters["shiftId"]?.toLongOrNull()
                 ?: return@patch call.respondValidationError("shiftId", "INVALID_SHIFT_ID", "shiftId は数値で指定してください。")
             val request = call.receive<PatchShiftRequest>()
@@ -202,7 +231,7 @@ fun Route.installShiftRoutes(
 
             val updated = patchShiftUseCase(
                 PatchShiftUseCase.Command(
-                    userId = userId,
+                    actorId = actorId,
                     shiftId = shiftId,
                     workDate = workDate,
                     startTime = shiftTimes?.start,
@@ -218,12 +247,84 @@ fun Route.installShiftRoutes(
         }
 
         delete("/{shiftId}") {
-            val userId = call.userIdOrNull() ?: return@delete call.respondInvalidUserId()
-            val auditContext = call.requireAuditContext(userId) ?: return@delete
+            call.userIdOrNull() ?: return@delete call.respondInvalidUserId()
+            val actorId = call.userId()
+            val auditContext = call.buildAuditContext(actorId)
             val shiftId = call.parameters["shiftId"]?.toLongOrNull()
                 ?: return@delete call.respondValidationError("shiftId", "INVALID_SHIFT_ID", "shiftId は数値で指定してください。")
-            val deleted = deleteShiftUseCase(shiftId, auditContext)
+            val deleted = deleteShiftUseCase(actorId, shiftId, auditContext)
             if (deleted) call.respond(HttpStatusCode.NoContent) else call.respond(HttpStatusCode.NotFound)
+        }
+    }
+
+    route("/stores/{storeId}/shift-board") {
+        get {
+            val actorId = call.userId()
+            val storeId = call.parameters["storeId"]?.toLongOrNull()
+                ?: return@get call.respondValidationError(
+                    field = "storeId",
+                    code = "INVALID_STORE_ID",
+                    message = "storeId は数値で指定してください。"
+                )
+            val startDate = call.requireLocalDateParam("startDate") ?: return@get
+            val endDate = call.requireLocalDateParam("endDate") ?: return@get
+            val includeDeleted = call.request.queryParameters["includeDeletedUsers"]?.toBooleanStrictOrNull() ?: false
+
+            val result = try {
+                getShiftBoardUseCase(
+                    GetShiftBoardUseCase.Command(
+                        actorId = actorId,
+                        storeId = storeId,
+                        startDate = startDate,
+                        endDate = endDate,
+                        includeDeletedUsers = includeDeleted
+                    )
+                )
+            } catch (ex: DomainValidationException) {
+                call.respondValidationErrors(ex.violations, ex.message ?: "入力内容を確認してください。")
+                return@get
+            }
+            call.respond(ShiftBoardResponseDto.from(result))
+        }
+    }
+
+    route("/stores/{storeId}/shift-requirements") {
+        put {
+            val actorId = call.userId()
+            val actor = getUserUseCase(actorId)
+                ?: return@put call.respondForbidden("アカウント情報を取得できません。")
+            val storeId = call.parameters["storeId"]?.toLongOrNull()
+                ?: return@put call.respondValidationError(
+                    field = "storeId",
+                    code = "INVALID_STORE_ID",
+                    message = "storeId は数値で指定してください。"
+                )
+            val request = call.receive<ShiftRequirementUpsertRequest>()
+            val targetDate = runCatching { LocalDate.parse(request.targetDate) }.getOrElse {
+                call.respondValidationError(
+                    field = "targetDate",
+                    code = "INVALID_DATE",
+                    message = "targetDate は YYYY-MM-DD 形式で指定してください。"
+                )
+                return@put
+            }
+
+            val result = try {
+                upsertShiftRequirementUseCase(
+                    UpsertShiftRequirementUseCase.Command(
+                        actor = actor,
+                        storeId = storeId,
+                        targetDate = targetDate,
+                        shiftType = request.shiftType,
+                        startRequired = request.startRequired,
+                        endRequired = request.endRequired
+                    )
+                )
+            } catch (ex: DomainValidationException) {
+                call.respondValidationErrors(ex.violations, ex.message ?: "入力内容を確認してください。")
+                return@put
+            }
+            call.respond(HttpStatusCode.OK, ShiftRequirementResponse.from(result))
         }
     }
 }
@@ -238,14 +339,16 @@ private suspend fun ApplicationCall.requireLocalDateParam(paramName: String): Lo
             )
             return null
         }
-    return runCatching { LocalDate.parse(raw) }.getOrElse {
+    val parsed = parseFlexibleLocalDate(raw)
+    if (parsed == null) {
         respondValidationError(
             field = paramName,
             code = "INVALID_DATE",
-            message = "$paramName は YYYY-MM-DD 形式で入力してください。"
+            message = "$paramName は YYYY-MM-DD 形式、または ISO8601 日付文字列で入力してください。"
         )
-        null
+        return null
     }
+    return parsed
 }
 
 private suspend fun ApplicationCall.requireLocalDateRange(
@@ -315,6 +418,14 @@ private suspend fun ApplicationCall.parseBreakWindows(
         result += ShiftTimeCodec.toInstant(startDate, startLocal) to ShiftTimeCodec.toInstant(endDate, endLocal)
     }
     return result
+}
+
+private fun parseFlexibleLocalDate(raw: String): LocalDate? {
+    return runCatching { LocalDate.parse(raw) }.getOrElse {
+        runCatching {
+            Instant.parse(raw).toLocalDateTime(TimeZone.currentSystemDefault()).date
+        }.getOrNull()
+    }
 }
 
 private suspend fun ApplicationCall.parseBreakPatchCommands(
@@ -408,7 +519,3 @@ private fun LocalDate.plusDays(days: Int): LocalDate =
 
 private fun Double.roundToTenths(): Double =
     (this * 10).roundToInt() / 10.0
-
-
-
-

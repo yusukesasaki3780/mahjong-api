@@ -35,13 +35,21 @@ import com.example.usecase.shift.DeleteShiftUseCase
 import com.example.usecase.shift.EditShiftUseCase
 import com.example.usecase.shift.GetDailyShiftUseCase
 import com.example.usecase.shift.GetMonthlyShiftUseCase
+import com.example.usecase.shift.GetShiftBoardUseCase
 import com.example.usecase.shift.GetShiftRangeUseCase
 import com.example.usecase.shift.GetShiftStatsUseCase
 import com.example.usecase.shift.PatchShiftUseCase
 import com.example.usecase.shift.RegisterShiftUseCase
+import com.example.usecase.notification.DeleteNotificationUseCase
+import com.example.usecase.notification.GetNotificationsUseCase
+import com.example.usecase.notification.GetUnreadNotificationCountUseCase
+import com.example.usecase.notification.MarkNotificationReadUseCase
+import com.example.usecase.notification.MarkAllNotificationsReadUseCase
+import com.example.usecase.store.GetAccessibleStoresUseCase
 import com.example.usecase.store.GetStoreListUseCase
 import com.example.usecase.user.AdminDeleteUserUseCase
 import com.example.usecase.user.AdminResetUserPasswordUseCase
+import com.example.usecase.user.AdminRestoreUserUseCase
 import com.example.usecase.user.CreateUserUseCase
 import com.example.usecase.user.DeleteMyAccountUseCase
 import com.example.usecase.user.DeleteUserUseCase
@@ -49,6 +57,7 @@ import com.example.usecase.user.GetUserUseCase
 import com.example.usecase.user.ListGeneralUsersUseCase
 import com.example.usecase.user.PatchUserUseCase
 import com.example.usecase.user.UpdateUserUseCase
+import com.example.usecase.shift.UpsertShiftRequirementUseCase
 import io.ktor.server.auth.authenticate
 import io.ktor.server.routing.Route
 
@@ -66,6 +75,7 @@ class RootRoutes(
     private val listGeneralUsersUseCase: ListGeneralUsersUseCase,
     private val adminDeleteUserUseCase: AdminDeleteUserUseCase,
     private val adminResetUserPasswordUseCase: AdminResetUserPasswordUseCase,
+    private val adminRestoreUserUseCase: AdminRestoreUserUseCase,
     private val getGameSettingsUseCase: GetGameSettingsUseCase,
     private val updateGameSettingsUseCase: UpdateGameSettingsUseCase,
     private val patchGameSettingsUseCase: PatchGameSettingsUseCase,
@@ -88,12 +98,20 @@ class RootRoutes(
     private val patchShiftUseCase: PatchShiftUseCase,
     private val deleteShiftUseCase: DeleteShiftUseCase,
     private val getMonthlyShiftUseCase: GetMonthlyShiftUseCase,
+    private val getShiftBoardUseCase: GetShiftBoardUseCase,
     private val getDailyShiftUseCase: GetDailyShiftUseCase,
     private val getShiftRangeUseCase: GetShiftRangeUseCase,
     private val getShiftStatsUseCase: GetShiftStatsUseCase,
+    private val upsertShiftRequirementUseCase: UpsertShiftRequirementUseCase,
+    private val getNotificationsUseCase: GetNotificationsUseCase,
+    private val markNotificationReadUseCase: MarkNotificationReadUseCase,
+    private val markAllNotificationsReadUseCase: MarkAllNotificationsReadUseCase,
+    private val deleteNotificationUseCase: DeleteNotificationUseCase,
+    private val getUnreadNotificationCountUseCase: GetUnreadNotificationCountUseCase,
     private val calculateMonthlySalaryUseCase: CalculateMonthlySalaryUseCase,
     private val getDashboardSummaryUseCase: GetDashboardSummaryUseCase,
     private val getStoreListUseCase: GetStoreListUseCase,
+    private val getAccessibleStoresUseCase: GetAccessibleStoresUseCase,
     private val getPrefectureListUseCase: GetPrefectureListUseCase,
     private val loginAttemptTracker: LoginAttemptTracker,
     private val refreshAccessTokenUseCase: RefreshAccessTokenUseCase,
@@ -116,6 +134,7 @@ class RootRoutes(
         installStoreRoutes(getStoreListUseCase = getStoreListUseCase)
         installPrefectureRoutes(getPrefectureListUseCase = getPrefectureListUseCase)
         authenticate(authName) {
+            installAccessibleStoreRoutes(getAccessibleStoresUseCase = getAccessibleStoresUseCase)
             installUserRoutes(
                 getUserUseCase = getUserUseCase,
                 updateUserUseCase = updateUserUseCase,
@@ -127,7 +146,8 @@ class RootRoutes(
                 getUserUseCase = getUserUseCase,
                 listGeneralUsersUseCase = listGeneralUsersUseCase,
                 adminDeleteUserUseCase = adminDeleteUserUseCase,
-                adminResetUserPasswordUseCase = adminResetUserPasswordUseCase
+                adminResetUserPasswordUseCase = adminResetUserPasswordUseCase,
+                adminRestoreUserUseCase = adminRestoreUserUseCase
             )
             installSettingsRoutes(
                 getGameSettingsUseCase = getGameSettingsUseCase,
@@ -153,14 +173,24 @@ class RootRoutes(
                 getMyRankingUseCase = getMyRankingUseCase
             )
             installShiftRoutes(
+                getUserUseCase = getUserUseCase,
                 getMonthlyShiftUseCase = getMonthlyShiftUseCase,
                 getDailyShiftUseCase = getDailyShiftUseCase,
                 getShiftRangeUseCase = getShiftRangeUseCase,
                 getShiftStatsUseCase = getShiftStatsUseCase,
+                getShiftBoardUseCase = getShiftBoardUseCase,
                 registerShiftUseCase = registerShiftUseCase,
                 editShiftUseCase = editShiftUseCase,
                 patchShiftUseCase = patchShiftUseCase,
-                deleteShiftUseCase = deleteShiftUseCase
+                deleteShiftUseCase = deleteShiftUseCase,
+                upsertShiftRequirementUseCase = upsertShiftRequirementUseCase
+            )
+            installNotificationRoutes(
+                getNotificationsUseCase = getNotificationsUseCase,
+                markNotificationReadUseCase = markNotificationReadUseCase,
+                markAllNotificationsReadUseCase = markAllNotificationsReadUseCase,
+                deleteNotificationUseCase = deleteNotificationUseCase,
+                getUnreadNotificationCountUseCase = getUnreadNotificationCountUseCase
             )
             installSalaryRoutes(calculateMonthlySalaryUseCase = calculateMonthlySalaryUseCase)
             installDashboardRoutes(getDashboardSummaryUseCase = getDashboardSummaryUseCase)
@@ -171,4 +201,3 @@ class RootRoutes(
         }
     }
 }
-

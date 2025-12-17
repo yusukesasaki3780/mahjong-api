@@ -1,5 +1,6 @@
 package com.example.presentation.routes
 
+import com.example.TestFixtures
 import com.example.config.JwtConfig
 import com.example.config.JwtProvider
 import com.example.configureMonitoring
@@ -32,13 +33,22 @@ import com.example.usecase.shift.DeleteShiftUseCase
 import com.example.usecase.shift.EditShiftUseCase
 import com.example.usecase.shift.GetDailyShiftUseCase
 import com.example.usecase.shift.GetMonthlyShiftUseCase
+import com.example.usecase.shift.GetShiftBoardUseCase
 import com.example.usecase.shift.GetShiftRangeUseCase
 import com.example.usecase.shift.GetShiftStatsUseCase
 import com.example.usecase.shift.PatchShiftUseCase
 import com.example.usecase.shift.RegisterShiftUseCase
+import com.example.usecase.shift.UpsertShiftRequirementUseCase
+import com.example.usecase.notification.DeleteNotificationUseCase
+import com.example.usecase.notification.GetNotificationsUseCase
+import com.example.usecase.notification.GetUnreadNotificationCountUseCase
+import com.example.usecase.notification.MarkNotificationReadUseCase
+import com.example.usecase.notification.MarkAllNotificationsReadUseCase
+import com.example.usecase.store.GetAccessibleStoresUseCase
 import com.example.usecase.store.GetStoreListUseCase
 import com.example.usecase.user.AdminDeleteUserUseCase
 import com.example.usecase.user.AdminResetUserPasswordUseCase
+import com.example.usecase.user.AdminRestoreUserUseCase
 import com.example.usecase.user.CreateUserUseCase
 import com.example.usecase.user.DeleteMyAccountUseCase
 import com.example.usecase.user.DeleteUserUseCase
@@ -59,6 +69,7 @@ import io.ktor.server.config.MapApplicationConfig
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.routing.routing
 import io.ktor.server.testing.ApplicationTestBuilder
+import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.serialization.json.Json
 
@@ -89,6 +100,7 @@ abstract class RoutesTestBase {
     protected val listGeneralUsersUseCase: ListGeneralUsersUseCase = mockk(relaxed = true)
     protected val adminDeleteUserUseCase: AdminDeleteUserUseCase = mockk(relaxed = true)
     protected val adminResetUserPasswordUseCase: AdminResetUserPasswordUseCase = mockk(relaxed = true)
+    protected val adminRestoreUserUseCase: AdminRestoreUserUseCase = mockk(relaxed = true)
 
     protected val getGameSettingsUseCase: GetGameSettingsUseCase = mockk(relaxed = true)
     protected val updateGameSettingsUseCase: UpdateGameSettingsUseCase = mockk(relaxed = true)
@@ -114,16 +126,31 @@ abstract class RoutesTestBase {
     protected val patchShiftUseCase: PatchShiftUseCase = mockk(relaxed = true)
     protected val deleteShiftUseCase: DeleteShiftUseCase = mockk(relaxed = true)
     protected val getMonthlyShiftUseCase: GetMonthlyShiftUseCase = mockk(relaxed = true)
+    protected val getShiftBoardUseCase: GetShiftBoardUseCase = mockk(relaxed = true)
     protected val getDailyShiftUseCase: GetDailyShiftUseCase = mockk(relaxed = true)
     protected val getShiftRangeUseCase: GetShiftRangeUseCase = mockk(relaxed = true)
     protected val getShiftStatsUseCase: GetShiftStatsUseCase = mockk(relaxed = true)
+    protected val upsertShiftRequirementUseCase: UpsertShiftRequirementUseCase = mockk(relaxed = true)
+    protected val getNotificationsUseCase: GetNotificationsUseCase = mockk(relaxed = true)
+    protected val markNotificationReadUseCase: MarkNotificationReadUseCase = mockk(relaxed = true)
+    protected val markAllNotificationsReadUseCase: MarkAllNotificationsReadUseCase = mockk(relaxed = true)
+    protected val deleteNotificationUseCase: DeleteNotificationUseCase = mockk(relaxed = true)
+    protected val getUnreadNotificationCountUseCase: GetUnreadNotificationCountUseCase = mockk(relaxed = true)
 
     protected val calculateMonthlySalaryUseCase: CalculateMonthlySalaryUseCase = mockk(relaxed = true)
     protected val getDashboardSummaryUseCase: GetDashboardSummaryUseCase = mockk(relaxed = true)
     protected val getStoreListUseCase: GetStoreListUseCase = mockk(relaxed = true)
+    protected val getAccessibleStoresUseCase: GetAccessibleStoresUseCase = mockk(relaxed = true)
     protected val getPrefectureListUseCase: GetPrefectureListUseCase = mockk(relaxed = true)
     protected val getAdvancePaymentUseCase: GetAdvancePaymentUseCase = mockk(relaxed = true)
     protected val upsertAdvancePaymentUseCase: UpsertAdvancePaymentUseCase = mockk(relaxed = true)
+
+    init {
+        coEvery { getUserUseCase(any()) } answers {
+            val id = it.invocation.args.first() as Long
+            TestFixtures.user(id = id, storeId = 1)
+        }
+    }
 
     protected fun ApplicationTestBuilder.installRoutes() {
         environment {
@@ -158,6 +185,7 @@ abstract class RoutesTestBase {
                 listGeneralUsersUseCase = listGeneralUsersUseCase,
                 adminDeleteUserUseCase = adminDeleteUserUseCase,
                 adminResetUserPasswordUseCase = adminResetUserPasswordUseCase,
+                adminRestoreUserUseCase = adminRestoreUserUseCase,
                 getGameSettingsUseCase = getGameSettingsUseCase,
                 updateGameSettingsUseCase = updateGameSettingsUseCase,
                 patchGameSettingsUseCase = patchGameSettingsUseCase,
@@ -180,12 +208,20 @@ abstract class RoutesTestBase {
                 patchShiftUseCase = patchShiftUseCase,
                 deleteShiftUseCase = deleteShiftUseCase,
                 getMonthlyShiftUseCase = getMonthlyShiftUseCase,
+                getShiftBoardUseCase = getShiftBoardUseCase,
                 getDailyShiftUseCase = getDailyShiftUseCase,
                 getShiftRangeUseCase = getShiftRangeUseCase,
                 getShiftStatsUseCase = getShiftStatsUseCase,
+                upsertShiftRequirementUseCase = upsertShiftRequirementUseCase,
+                getNotificationsUseCase = getNotificationsUseCase,
+                markNotificationReadUseCase = markNotificationReadUseCase,
+                markAllNotificationsReadUseCase = markAllNotificationsReadUseCase,
+                deleteNotificationUseCase = deleteNotificationUseCase,
+                getUnreadNotificationCountUseCase = getUnreadNotificationCountUseCase,
                 calculateMonthlySalaryUseCase = calculateMonthlySalaryUseCase,
                 getDashboardSummaryUseCase = getDashboardSummaryUseCase,
                 getStoreListUseCase = getStoreListUseCase,
+                getAccessibleStoresUseCase = getAccessibleStoresUseCase,
                 getPrefectureListUseCase = getPrefectureListUseCase,
                 loginAttemptTracker = loginAttemptTracker(),
                 refreshAccessTokenUseCase = refreshAccessTokenUseCase,

@@ -11,6 +11,6 @@ import com.example.domain.repository.UserRepository
 class ListGeneralUsersUseCase(
     private val userRepository: UserRepository
 ) {
-    suspend operator fun invoke(): List<User> = userRepository.listNonAdminUsers()
+    suspend operator fun invoke(storeId: Long, includeDeleted: Boolean = false): List<User> =
+        userRepository.listNonAdminUsers(storeId = storeId, includeDeleted = includeDeleted)
 }
-

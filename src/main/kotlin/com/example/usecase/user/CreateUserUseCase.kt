@@ -91,11 +91,13 @@ class CreateUserUseCase(
                 id = null,
                 name = command.name,
                 nickname = command.nickname,
+                storeId = store.id,
                 storeName = store.storeName,
                 prefectureCode = command.prefectureCode,
                 email = command.email,
                 zooId = command.zooId,
                 isAdmin = false,
+                isDeleted = false,
                 createdAt = now,
                 updatedAt = now
             )
@@ -107,4 +109,3 @@ class CreateUserUseCase(
         return created
     }
 }
-

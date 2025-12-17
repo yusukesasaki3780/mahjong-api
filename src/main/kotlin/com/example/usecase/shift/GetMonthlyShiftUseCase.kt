@@ -14,10 +14,15 @@ import java.time.YearMonth
  * 指定年月のシフト一覧を取得するユースケース。
  */
 class GetMonthlyShiftUseCase(
-    private val repository: ShiftRepository
+    private val repository: ShiftRepository,
+    private val contextProvider: ShiftContextProvider,
+    private val permissionService: ShiftPermissionService
 ) {
 
-    suspend operator fun invoke(userId: Long, yearMonth: YearMonth): List<Shift> =
-        repository.getMonthlyShifts(userId, yearMonth)
+    suspend operator fun invoke(actorId: Long, targetUserId: Long, yearMonth: YearMonth): List<Shift> {
+        val context = contextProvider.forUserView(actorId, targetUserId)
+        permissionService.ensureCanView(context)
+        val userId = context.primaryUser?.id ?: error("Target user missing id.")
+        return repository.getMonthlyShifts(userId, yearMonth)
+    }
 }
-

@@ -66,6 +66,7 @@ class ShiftTimeCalculatorTest {
         Shift(
             id = 1,
             userId = 1,
+            storeId = 1,
             workDate = start.toLocalDateTime(zone).date,
             startTime = start,
             endTime = end,

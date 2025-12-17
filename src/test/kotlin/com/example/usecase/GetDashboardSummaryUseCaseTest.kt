@@ -37,6 +37,7 @@ class GetDashboardSummaryUseCaseTest {
         val shift = Shift(
             id = 1,
             userId = 1,
+            storeId = 1,
             workDate = LocalDate(2025, 1, 1),
             startTime = Instant.parse("2025-01-01T05:00:00Z"),
             endTime = Instant.parse("2025-01-01T09:00:00Z"),

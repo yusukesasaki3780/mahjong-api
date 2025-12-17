@@ -21,18 +21,18 @@ class CreateDefaultGameSettingsUseCase(
         val now = Clock.System.now()
         val defaultSettings = GameSettings(
             userId = userId,
-            yonmaGameFee = 400,
-            sanmaGameFee = 300,
-            sanmaGameFeeBack = 0,
+            yonmaGameFee = 2000,
+            sanmaGameFee = 850,
+            sanmaGameFeeBack = 50,
             yonmaTipUnit = 100,
-            sanmaTipUnit = 100,
+            sanmaTipUnit = 50,
             wageType = WageType.HOURLY,
-            hourlyWage = 1200,
+            hourlyWage = 1226,
             fixedSalary = 0,
             nightRateMultiplier = 1.25,
-            baseMinWage = 1200,
-            incomeTaxRate = 0.1021,
-            transportPerShift = 500,
+            baseMinWage = 1226,
+            incomeTaxRate = 0.0321,
+            transportPerShift = 0,
             createdAt = now,
             updatedAt = now
         )
