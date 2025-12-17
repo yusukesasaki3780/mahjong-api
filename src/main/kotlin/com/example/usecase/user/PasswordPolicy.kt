@@ -17,6 +17,9 @@ object PasswordPolicy {
     private const val ERROR_MESSAGE =
         "パスワードは8文字以上で、英大文字・英小文字・数字・記号のうち3種類以上を含めてください。"
 
+    /**
+     * パスワードが最低文字数と多様性を満たしているかを検証する。
+     */
     fun validate(password: String) {
         val categories = listOf(
             uppercase.containsMatchIn(password),

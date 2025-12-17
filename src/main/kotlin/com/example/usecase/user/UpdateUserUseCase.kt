@@ -24,6 +24,9 @@ class UpdateUserUseCase(
     private val auditLogger: AuditLogger
 ) {
 
+    /**
+     * ユーザー情報を全更新する際に必要な入力値を保持するコマンド。
+     */
     data class Command(
         val userId: Long,
         val name: String,
@@ -35,6 +38,9 @@ class UpdateUserUseCase(
         val newPassword: String? = null
     )
 
+    /**
+     * 入力値を検証し、必要ならパスワード変更を行ってからユーザー情報を更新・監査する。
+     */
     suspend operator fun invoke(command: Command, auditContext: AuditContext): User {
         command.validateFields()
 

@@ -14,6 +14,9 @@ class CreateDefaultGameSettingsUseCase(
     private val timeZone: TimeZone = TimeZone.currentSystemDefault()
 ) {
 
+    /**
+     * まだ設定が存在しない場合にデフォルト値でゲーム設定を保存する。
+     */
     suspend operator fun invoke(userId: Long) {
         val existing = repository.getSettings(userId)
         if (existing != null) return

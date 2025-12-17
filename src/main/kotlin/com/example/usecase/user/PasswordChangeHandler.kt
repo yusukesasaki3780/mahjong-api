@@ -11,6 +11,9 @@ private const val CURRENT_PASSWORD_INVALID_MESSAGE = "現在のパスワード�
 
 private val passwordHasher = BCrypt.withDefaults()
 
+/**
+ * 現在のパスワードと新しいパスワードが入力されている場合のみ検証と更新を行う。
+ */
 internal suspend fun changePasswordIfRequested(
     userId: Long,
     credentialRepository: UserCredentialRepository,
@@ -65,4 +68,3 @@ internal suspend fun changePasswordIfRequested(
     val hashed = passwordHasher.hashToString(12, newPassword.toCharArray())
     credentialRepository.updatePassword(userId, hashed)
 }
-

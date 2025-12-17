@@ -10,16 +10,25 @@ import com.example.domain.model.GameType
 import com.example.domain.model.StatsPeriod
 import com.example.domain.repository.UserRepository
 
+/**
+ * ランキング一覧からログインユーザー自身の順位や成績を抽出するユースケース。
+ */
 class GetMyRankingUseCase(
     private val userRepository: UserRepository
 ) {
 
+    /**
+     * 自身の順位照会で使用するユーザー ID・ゲーム種別・期間の組み合わせ。
+     */
     data class Command(
         val userId: Long,
         val gameType: GameType,
         val period: StatsPeriod
     )
 
+    /**
+     * 自身の順位情報と統計値をまとめたレスポンス。
+     */
     data class Result(
         val rank: Int?,
         val totalPlayers: Int,
@@ -28,12 +37,18 @@ class GetMyRankingUseCase(
         val gameCount: Int,
         val user: UserSummary
     ) {
+        /**
+         * レスポンスに含めるユーザー簡易情報。
+         */
         data class UserSummary(
             val id: Long,
             val nickname: String
         )
     }
 
+    /**
+     * ユーザー情報を取得したうえでランキングを検索し、自分の順位と統計を返す。
+     */
     suspend operator fun invoke(command: Command): Result {
         val user = userRepository.findById(command.userId)
             ?: throw IllegalArgumentException("User ${command.userId} not found.")

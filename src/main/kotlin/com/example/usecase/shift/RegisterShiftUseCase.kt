@@ -30,6 +30,9 @@ class RegisterShiftUseCase(
     private val permissionService: ShiftPermissionService
 ) {
 
+    /**
+     * シフト登録時の入力値を保持するコマンド。
+     */
     data class Command(
         val actorId: Long,
         val targetUserId: Long,
@@ -42,11 +45,17 @@ class RegisterShiftUseCase(
         val specialHourlyWageId: Long? = null
     )
 
+    /**
+     * 1 回分の休憩時間を表すコマンド。
+     */
     data class BreakCommand(
         val breakStart: Instant,
         val breakEnd: Instant
     )
 
+    /**
+     * 権限チェックとバリデーションを通過したシフトを登録し、監査情報付きで結果を返す。
+     */
     suspend operator fun invoke(command: Command, auditContext: AuditContext): Shift {
         val context = contextProvider.forCreate(
             actorId = command.actorId,

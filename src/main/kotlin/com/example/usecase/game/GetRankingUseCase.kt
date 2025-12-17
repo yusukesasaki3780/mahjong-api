@@ -18,12 +18,17 @@ class GetRankingUseCase(
     private val userRepository: UserRepository
 ) {
 
+    /**
+     * ランキング取得条件（ゲーム種別・期間）を表すコマンド。
+     */
     data class Command(
         val gameType: GameType,
         val period: StatsPeriod
     )
 
+    /**
+     * 指定ゲーム種別と期間でランキングを検索する。
+     */
     suspend operator fun invoke(command: Command): List<RankingEntry> =
         userRepository.findRanking(command.gameType, command.period)
 }
-

@@ -17,11 +17,17 @@ class GetUserStatsUseCase(
     private val repository: GameResultRepository
 ) {
 
+    /**
+     * 成績集計の対象ユーザーと期間を指定するコマンド。
+     */
     data class Command(
         val userId: Long,
         val range: StatsRange
     )
 
+    /**
+     * 指定期間の統計値と詳細結果を含むレスポンス。
+     */
     data class Result(
         val userId: Long,
         val range: StatsRange,
@@ -31,6 +37,9 @@ class GetUserStatsUseCase(
         val results: List<GameResult>
     )
 
+    /**
+     * 成績レンジを指定して統計値と明細を同時に取得する。
+     */
     suspend operator fun invoke(command: Command): Result {
         val results = repository.getUserResults(command.userId, command.range)
         val average = repository.getAveragePlace(command.userId, command.range)

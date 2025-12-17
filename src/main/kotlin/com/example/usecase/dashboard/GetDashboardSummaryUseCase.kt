@@ -26,6 +26,9 @@ class GetDashboardSummaryUseCase(
     private val timeZone: TimeZone = TimeZone.currentSystemDefault()
 ) {
 
+    /**
+     * ダッシュボード表示に必要な全カテゴリのサマリーを束ねたレスポンス。
+     */
     data class Result(
         val userId: Long,
         val yearMonth: YearMonth,
@@ -34,6 +37,9 @@ class GetDashboardSummaryUseCase(
         val game: GameSummary
     )
 
+    /**
+     * 勤務時間やシフト数を集計したサマリー。
+     */
     data class WorkSummary(
         val totalWorkMinutes: Long,
         val totalDayMinutes: Long,
@@ -41,6 +47,9 @@ class GetDashboardSummaryUseCase(
         val totalShifts: Int
     )
 
+    /**
+     * 給与関連の金額をまとめたサマリー。
+     */
     data class SalarySummary(
         val baseWageTotal: Double,
         val nightExtraTotal: Double,
@@ -56,6 +65,9 @@ class GetDashboardSummaryUseCase(
         val incomeTax: Double
     )
 
+    /**
+     * 個別の特別手当の内訳。
+     */
     data class SpecialAllowanceSummary(
         val type: String,
         val label: String,
@@ -66,18 +78,27 @@ class GetDashboardSummaryUseCase(
         val specialHourlyWageId: Long? = null
     )
 
+    /**
+     * ゲーム全体の統計値。
+     */
     data class GameSummary(
         val totalGames: Int,
         val yonma: GameTypeSummary,
         val sanma: GameTypeSummary
     )
 
+    /**
+     * 各ゲーム種別の統計値。
+     */
     data class GameTypeSummary(
         val games: Int,
         val avgPlace: Double?,
         val totalIncome: Long
     )
 
+    /**
+     * 指定ユーザー・年月の勤務／給与／ゲーム情報を集計してダッシュボード用サマリーを返す。
+     */
     suspend operator fun invoke(userId: Long, yearMonth: YearMonth): Result {
         val shifts = shiftRepository.getMonthlyShifts(userId, yearMonth)
         val minutes = ShiftTimeCalculator.calculateMinutes(shifts, timeZone)

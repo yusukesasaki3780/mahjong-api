@@ -20,6 +20,9 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 
+/**
+ * シフトの一部だけを更新し、監査や通知まで含めて処理するユースケース。
+ */
 class PatchShiftUseCase(
     private val repository: ShiftRepository,
     private val specialHourlyWageRepository: SpecialHourlyWageRepository,
@@ -29,6 +32,9 @@ class PatchShiftUseCase(
     private val permissionService: ShiftPermissionService
 ) {
 
+    /**
+     * シフト部分更新で指定可能な項目をまとめたコマンド。
+     */
     data class Command(
         val actorId: Long,
         val shiftId: Long,
@@ -41,6 +47,9 @@ class PatchShiftUseCase(
         val clearSpecialHourlyWage: Boolean = false
     )
 
+    /**
+     * 休憩の追加・更新・削除を表現するパッチ情報。
+     */
     data class BreakPatchCommand(
         val id: Long?,
         val breakStart: Instant? = null,
@@ -48,6 +57,9 @@ class PatchShiftUseCase(
         val delete: Boolean = false
     )
 
+    /**
+     * 送信されたパッチ内容を正規化・検証したうえで適用し、結果を監査ログと通知に反映する。
+     */
     suspend operator fun invoke(command: Command, auditContext: AuditContext): Shift {
         val context = contextProvider.forUpdate(command.actorId, command.shiftId)
         permissionService.ensureCanUpdate(context)

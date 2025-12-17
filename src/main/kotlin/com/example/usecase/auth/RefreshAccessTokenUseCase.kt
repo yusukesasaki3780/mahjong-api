@@ -22,11 +22,17 @@ class RefreshAccessTokenUseCase(
     private val refreshTokenTtlDays: Int = 30
 ) {
 
+    /**
+     * リフレッシュ要求に必要なトークンと（任意の）ユーザーIDをまとめたコマンド。
+     */
     data class Command(
         val refreshToken: String,
         val userId: Long? = null
     )
 
+    /**
+     * 提供されたリフレッシュトークンを検証し、アクセストークンと新しいリフレッシュトークンを発行する。
+     */
     suspend operator fun invoke(command: Command): LoginUserUseCase.Result {
         val tokenUserId = RefreshTokenHelper.extractUserId(command.refreshToken)
             ?: throw IllegalArgumentException("Invalid refresh token format")

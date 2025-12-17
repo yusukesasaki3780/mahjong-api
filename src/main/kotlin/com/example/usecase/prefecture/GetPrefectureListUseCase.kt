@@ -4,12 +4,13 @@ import com.example.domain.model.Prefecture
 import com.example.domain.repository.PrefectureRepository
 
 /**
- * ### このファイルの役割
- * - 都道府県マスターの一覧を取得するユースケースです。
- * - フロントエンドが 47 件の選択肢を取得したい場面で呼び出されます。
+ * 都道府県マスター一覧を返すユースケース。
  */
 class GetPrefectureListUseCase(
     private val repository: PrefectureRepository
 ) {
+    /**
+     * 都道府県マスターデータをすべて取得する。
+     */
     suspend operator fun invoke(): List<Prefecture> = repository.getAll()
 }

@@ -10,11 +10,17 @@ import com.example.domain.model.Shift
 import com.example.domain.repository.ShiftRepository
 import kotlinx.datetime.LocalDate
 
+/**
+ * 日単位でシフトを取得するユースケース。
+ */
 class GetDailyShiftUseCase(
     private val repository: ShiftRepository,
     private val contextProvider: ShiftContextProvider,
     private val permissionService: ShiftPermissionService
 ) {
+    /**
+     * 対象ユーザーの指定日シフトを、権限チェック後に取得する。
+     */
     suspend operator fun invoke(actorId: Long, targetUserId: Long, workDate: LocalDate): List<Shift> {
         val context = contextProvider.forUserView(actorId, targetUserId)
         permissionService.ensureCanView(context)

@@ -18,6 +18,9 @@ class DeleteUserUseCase(
     private val auditLogger: AuditLogger
 ) {
 
+    /**
+     * 対象ユーザーを論理削除し、成功した場合のみ監査ログを残す。
+     */
     suspend operator fun invoke(userId: Long, auditContext: AuditContext): Boolean {
         val before = userRepository.findById(userId) ?: return false
         if (before.isDeleted) {

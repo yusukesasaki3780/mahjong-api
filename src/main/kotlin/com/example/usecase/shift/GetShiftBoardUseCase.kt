@@ -22,6 +22,9 @@ import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 
+/**
+ * 店舗単位のシフトボード情報（ユーザー一覧・シフト・必要人数）を集計するユースケース。
+ */
 class GetShiftBoardUseCase(
     private val userRepository: UserRepository,
     private val shiftRepository: ShiftRepository,
@@ -31,6 +34,9 @@ class GetShiftBoardUseCase(
     private val timeZone: TimeZone = TimeZone.currentSystemDefault()
 ) {
 
+    /**
+     * シフトボード取得条件（操作者・店舗・期間など）を表すコマンド。
+     */
     data class Command(
         val actorId: Long,
         val storeId: Long,
@@ -39,6 +45,9 @@ class GetShiftBoardUseCase(
         val includeDeletedUsers: Boolean
     )
 
+    /**
+     * シフトボード画面に必要な全情報をまとめた結果。
+     */
     data class Result(
         val storeId: Long,
         val startDate: LocalDate,
@@ -49,6 +58,9 @@ class GetShiftBoardUseCase(
         val editable: Boolean
     )
 
+    /**
+     * 表示用のユーザー簡易情報。
+     */
     data class UserSummary(
         val id: Long,
         val name: String,
@@ -57,6 +69,9 @@ class GetShiftBoardUseCase(
         val isDeleted: Boolean
     )
 
+    /**
+     * シフト 1 件分を UI 向けに整形した情報。
+     */
     data class ShiftSummary(
         val id: Long,
         val userId: Long,
@@ -67,6 +82,9 @@ class GetShiftBoardUseCase(
         val memo: String?
     )
 
+    /**
+     * 1 枠あたりの必要人数と実績を表す情報。
+     */
     data class RequirementSummary(
         val id: Long?,
         val targetDate: LocalDate,
@@ -78,6 +96,9 @@ class GetShiftBoardUseCase(
         val editable: Boolean
     )
 
+    /**
+     * 指定期間と店舗のシフト・要員状況を権限制御付きで取得し、UI 向けに整形して返す。
+     */
     suspend operator fun invoke(command: Command): Result {
         requireRange(command.startDate, command.endDate)
         val viewContext = contextProvider.forStoreView(command.actorId, command.storeId)

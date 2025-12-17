@@ -14,11 +14,17 @@ import com.example.domain.repository.GameSettingsRepository
 import com.example.infrastructure.logging.AuditLogger
 import kotlinx.datetime.Clock
 
+/**
+ * ゲーム設定の一部項目のみを差分更新し、監査ログへ記録するユースケース。
+ */
 class PatchGameSettingsUseCase(
     private val repository: GameSettingsRepository,
     private val auditLogger: AuditLogger
 ) {
 
+    /**
+     * 差分更新の対象項目を指定するコマンド。
+     */
     data class Command(
         val userId: Long,
         val yonmaGameFee: Int? = null,
@@ -35,6 +41,9 @@ class PatchGameSettingsUseCase(
         val transportPerShift: Int? = null
     )
 
+    /**
+     * 指定された項目だけを検証・補完してパッチ適用し、更新前後を監査ログに残す。
+     */
     suspend operator fun invoke(command: Command, auditContext: AuditContext): GameSettings {
         command.validateFields()
 

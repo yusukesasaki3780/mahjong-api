@@ -20,6 +20,9 @@ import kotlinx.datetime.LocalDate
 import org.valiktor.functions.isLessThan
 import org.valiktor.validate
 
+/**
+ * 既存シフトを全更新する際のバリデーションと監査記録を担うユースケース。
+ */
 class EditShiftUseCase(
     private val repository: ShiftRepository,
     private val specialHourlyWageRepository: SpecialHourlyWageRepository,
@@ -29,6 +32,9 @@ class EditShiftUseCase(
     private val permissionService: ShiftPermissionService
 ) {
 
+    /**
+     * シフト更新で受け取る全フィールドをまとめたコマンド。
+     */
     data class Command(
         val actorId: Long,
         val shiftId: Long,
@@ -41,11 +47,17 @@ class EditShiftUseCase(
         val specialHourlyWageId: Long? = null
     )
 
+    /**
+     * 編集時に送られる休憩時間帯を示すコマンド。
+     */
     data class BreakCommand(
         val breakStart: Instant,
         val breakEnd: Instant
     )
 
+    /**
+     * 指定シフトの内容を整合性チェックしたうえで更新し、監査ログと通知を発行する。
+     */
     suspend operator fun invoke(command: Command, auditContext: AuditContext): Shift {
         val context = contextProvider.forUpdate(command.actorId, command.shiftId)
         permissionService.ensureCanUpdate(context)

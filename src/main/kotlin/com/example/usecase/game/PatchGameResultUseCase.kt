@@ -23,6 +23,9 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import org.slf4j.LoggerFactory
 
+/**
+ * ゲーム結果の一部項目のみを部分更新し、監査ログまで含めて処理するユースケース。
+ */
 class PatchGameResultUseCase(
     private val repository: GameResultRepository,
     private val settingsRepository: GameSettingsRepository,
@@ -30,6 +33,9 @@ class PatchGameResultUseCase(
     private val timeZone: TimeZone = TimeZone.currentSystemDefault()
 ) {
 
+    /**
+     * 部分更新で変更したい項目だけ指定するためのコマンド。
+     */
     data class Command(
         val userId: Long,
         val resultId: Long,
@@ -46,6 +52,9 @@ class PatchGameResultUseCase(
         val simpleBatchId: UUID? = null
     )
 
+    /**
+     * 入力パッチの整合性を検証し、許可されている範囲だけ反映して監査ログを残す。
+     */
     suspend operator fun invoke(command: Command, auditContext: AuditContext): GameResult {
         val before = repository.findById(command.resultId)
             ?: throw IllegalArgumentException("Game result not found: ${command.resultId}")

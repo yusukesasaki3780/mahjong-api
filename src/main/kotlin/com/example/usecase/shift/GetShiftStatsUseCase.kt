@@ -10,6 +10,9 @@ import com.example.domain.repository.ShiftRepository
 import java.time.YearMonth
 import kotlinx.datetime.TimeZone
 
+/**
+ * 月次のシフト統計を計算するユースケース。
+ */
 class GetShiftStatsUseCase(
     private val shiftRepository: ShiftRepository,
     private val timeZone: TimeZone = TimeZone.currentSystemDefault(),
@@ -17,6 +20,9 @@ class GetShiftStatsUseCase(
     private val permissionService: ShiftPermissionService
     ) {
 
+    /**
+     * 月次シフト統計の結果を保持する DTO。
+     */
     data class Result(
         val userId: Long,
         val yearMonth: YearMonth,
@@ -26,6 +32,9 @@ class GetShiftStatsUseCase(
         val shiftCount: Int
     )
 
+    /**
+     * 指定年月のシフト時間・夜間時間・勤務日数などを集計して返す。
+     */
     suspend operator fun invoke(actorId: Long, targetUserId: Long, yearMonth: YearMonth): Result {
         val context = contextProvider.forUserView(actorId, targetUserId)
         permissionService.ensureCanView(context)

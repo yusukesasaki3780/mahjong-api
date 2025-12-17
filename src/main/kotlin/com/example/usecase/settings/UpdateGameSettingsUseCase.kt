@@ -13,11 +13,17 @@ import com.example.domain.repository.GameSettingsRepository
 import com.example.infrastructure.logging.AuditLogger
 import kotlinx.datetime.Clock
 
+/**
+ * ゲーム設定を全項目更新しつつ監査ログを記録するユースケース。
+ */
 class UpdateGameSettingsUseCase(
     private val repository: GameSettingsRepository,
     private val auditLogger: AuditLogger
 ) {
 
+    /**
+     * ゲーム設定を丸ごと更新する際に必要な入力値を保持するコマンド。
+     */
     data class Command(
         val userId: Long,
         val yonmaGameFee: Int,
@@ -34,6 +40,9 @@ class UpdateGameSettingsUseCase(
         val transportPerShift: Int?
     )
 
+    /**
+     * 入力値を検証して設定を保存し、更新前後の差分を監査ログに残す。
+     */
     suspend operator fun invoke(command: Command, auditContext: AuditContext): GameSettings {
         command.validateFields()
         command.ensureFixedSalaryRequirement()

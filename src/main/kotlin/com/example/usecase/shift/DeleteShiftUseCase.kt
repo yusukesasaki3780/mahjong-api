@@ -9,6 +9,10 @@
 import com.example.domain.model.AuditContext
 import com.example.domain.repository.ShiftRepository
 import com.example.infrastructure.logging.AuditLogger
+
+/**
+ * シフト削除と監査・通知処理を一括で実行するユースケース。
+ */
 class DeleteShiftUseCase(
     private val repository: ShiftRepository,
     private val auditLogger: AuditLogger,
@@ -16,7 +20,9 @@ class DeleteShiftUseCase(
     private val contextProvider: ShiftContextProvider,
     private val permissionService: ShiftPermissionService
 ) {
-
+    /**
+     * 削除権限を確認してからシフトを削除し、成功時のみ監査ログと通知を発行する。
+     */
     suspend operator fun invoke(actorId: Long, shiftId: Long, auditContext: AuditContext): Boolean {
         val context = contextProvider.forDelete(actorId, shiftId)
         permissionService.ensureCanDelete(context)

@@ -19,6 +19,9 @@ class GetMonthlyShiftUseCase(
     private val permissionService: ShiftPermissionService
 ) {
 
+    /**
+     * 指定したユーザーと年月のシフトを権限チェック後に取得する。
+     */
     suspend operator fun invoke(actorId: Long, targetUserId: Long, yearMonth: YearMonth): List<Shift> {
         val context = contextProvider.forUserView(actorId, targetUserId)
         permissionService.ensureCanView(context)

@@ -10,6 +10,9 @@ import com.example.domain.repository.GameResultRepository
 class GetGameResultUseCase(
     private val repository: GameResultRepository
 ) {
+    /**
+     * ログインユーザーの成績のみ返却し、他人の結果は null にする。
+     */
     suspend operator fun invoke(userId: Long, resultId: Long): GameResult? {
         val result = repository.findById(resultId) ?: return null
         return if (result.userId == userId) result else null

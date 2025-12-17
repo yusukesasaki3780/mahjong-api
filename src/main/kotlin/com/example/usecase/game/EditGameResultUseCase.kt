@@ -1,9 +1,9 @@
 package com.example.usecase.game
 
 /**
- * ### ‚±‚Ìƒtƒ@ƒCƒ‹‚Ì–ğŠ„
- * - ƒQ[ƒ€Œ‹‰Ê‚ğŠÛ‚²‚ÆXV‚·‚éƒ†[ƒXƒP[ƒX‚ÅAŒŸØ‚ÆŠÄ¸ƒƒO‚ğˆêŠ‡‚Åˆµ‚¢‚Ü‚·B
- * - ‘S€–Ú‚ğã‘‚«‚·‚é PUT ‘€ì‚ÌÀ‘Ô‚ğ‚±‚±‚É•Â‚¶‚ß‚Ä‚¢‚Ü‚·B
+ * ### ã“ã®ãƒ•ã‚¡ã‚¤ãƒ«ã®å½¹å‰²
+ * - ã‚²ãƒ¼ãƒ çµæœã‚’ä¸¸ã”ã¨æ›´æ–°ã™ã‚‹ãƒ¦ãƒ¼ã‚¹ã‚±ãƒ¼ã‚¹ã§ã€æ¤œè¨¼ã¨ç›£æŸ»ãƒ­ã‚°ã‚’ä¸€æ‹¬ã§æ‰±ã„ã¾ã™ã€‚
+ * - å…¨é …ç›®ã‚’ä¸Šæ›¸ãã™ã‚‹ PUT æ“ä½œã®å®Ÿæ…‹ã‚’ã“ã“ã«é–‰ã˜è¾¼ã‚ã¦ã„ã¾ã™ã€‚
  */
 
 import com.example.common.error.DomainValidationException
@@ -26,7 +26,7 @@ import org.valiktor.functions.isIn
 import org.valiktor.validate
 
 /**
- * ƒQ[ƒ€Œ‹‰Ê‚ÌC³‚ğs‚¤ƒ†[ƒXƒP[ƒXB
+ * ã‚²ãƒ¼ãƒ çµæœã®ä¿®æ­£ã‚’è¡Œã†ãƒ¦ãƒ¼ã‚¹ã‚±ãƒ¼ã‚¹ã€‚
  */
 class EditGameResultUseCase(
     private val repository: GameResultRepository,
@@ -35,6 +35,9 @@ class EditGameResultUseCase(
     private val timeZone: TimeZone = TimeZone.currentSystemDefault()
 ) {
 
+    /**
+     * ã‚²ãƒ¼ãƒ çµæœæ›´æ–°æ™‚ã«å¿…è¦ãªå…¨é …ç›®ã‚’ä¿æŒã™ã‚‹ã‚³ãƒãƒ³ãƒ‰ã€‚
+     */
     data class Command(
         val id: Long,
         val userId: Long,
@@ -52,6 +55,9 @@ class EditGameResultUseCase(
         val simpleBatchId: UUID? = null
     )
 
+    /**
+     * æ—¢å­˜ã®ã‚²ãƒ¼ãƒ çµæœã‚’æ¤œè¨¼ã—ã€æ›´æ–°å¾Œã®ãƒ¬ã‚³ãƒ¼ãƒ‰ã‚’ä¿å­˜ã—ã¦ç›£æŸ»ãƒ­ã‚°ã‚’æ®‹ã™ã€‚
+     */
     suspend operator fun invoke(command: Command, auditContext: AuditContext): GameResult {
         val settings = settingsRepository.resolveSettings(command.userId)
         val tipUnit = settings.tipUnit(command.gameType)
@@ -66,10 +72,10 @@ class EditGameResultUseCase(
                     FieldError(
                         field = "simpleBatchId",
                         code = "SIMPLE_BATCH_EDIT_FORBIDDEN",
-                        message = "‚Ü‚Æ‚ß‚Ä“o˜^‚Ì¬Ñ‚Í•ÒW‚Å‚«‚Ü‚¹‚ñB"
+                        message = "ã¾ã¨ã‚ã¦ç™»éŒ²ã®æˆç¸¾ã¯ç·¨é›†ã§ãã¾ã›ã‚“ã€‚"
                     )
                 ),
-                message = "‚Ü‚Æ‚ß‚Ä“o˜^‚Ì¬Ñ‚Í•ÒW‚Å‚«‚Ü‚¹‚ñB"
+                message = "ã¾ã¨ã‚ã¦ç™»éŒ²ã®æˆç¸¾ã¯ç·¨é›†ã§ãã¾ã›ã‚“ã€‚"
             )
         }
         if (before.isFinalIncomeRecord) {
@@ -78,10 +84,10 @@ class EditGameResultUseCase(
                     FieldError(
                         field = "isFinalIncomeRecord",
                         code = "FINAL_INCOME_EDIT_FORBIDDEN",
-                        message = "ÅIûx‚Ì¬Ñ‚Í•ÒW‚Å‚«‚Ü‚¹‚ñB"
+                        message = "æœ€çµ‚åæ”¯ã®æˆç¸¾ã¯ç·¨é›†ã§ãã¾ã›ã‚“ã€‚"
                     )
                 ),
-                message = "ÅIûx‚Ì¬Ñ‚Í•ÒW‚Å‚«‚Ü‚¹‚ñB"
+                message = "æœ€çµ‚åæ”¯ã®æˆç¸¾ã¯ç·¨é›†ã§ãã¾ã›ã‚“ã€‚"
             )
         }
 

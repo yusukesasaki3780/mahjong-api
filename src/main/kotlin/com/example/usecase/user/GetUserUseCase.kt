@@ -16,6 +16,9 @@ class GetUserUseCase(
     private val userRepository: UserRepository
 ) {
 
+    /**
+     * 指定 ID のユーザーを取得し、削除済みなら null を返す。
+     */
     suspend operator fun invoke(userId: Long): User? =
         userRepository.findById(userId)?.takeIf { !it.isDeleted }
 }

@@ -10,12 +10,18 @@ import com.example.domain.repository.ShiftRepository
 import com.example.domain.repository.StoreMasterRepository
 import com.example.domain.repository.UserRepository
 
+/**
+ * シフトの閲覧・作成・更新に必要なユーザー／店舗情報と権限チェックを集約するプロバイダー。
+ */
 class ShiftContextProvider(
     private val userRepository: UserRepository,
     private val shiftRepository: ShiftRepository,
     private val storeMasterRepository: StoreMasterRepository
 ) {
 
+    /**
+     * シフト新規作成時に必要な俯瞰情報を解決し、指定店舗の作成権限を検証する。
+     */
     suspend fun forCreate(
         actorId: Long,
         targetUserId: Long,
@@ -64,6 +70,9 @@ class ShiftContextProvider(
         return ShiftCreateContext(actor, targetUser, store)
     }
 
+    /**
+     * シフト更新時に対象データと権限を解決する。
+     */
     suspend fun forUpdate(actorId: Long, shiftId: Long): ShiftUpdateContext {
         val actor = requireUser(actorId, "actorId")
         val shift = requireShift(shiftId)
@@ -73,6 +82,9 @@ class ShiftContextProvider(
         return ShiftUpdateContext(actor, targetUser, store, shift)
     }
 
+    /**
+     * シフト削除時に対象データと権限を解決する。
+     */
     suspend fun forDelete(actorId: Long, shiftId: Long): ShiftDeleteContext {
         val actor = requireUser(actorId, "actorId")
         val shift = requireShift(shiftId)
@@ -82,6 +94,9 @@ class ShiftContextProvider(
         return ShiftDeleteContext(actor, targetUser, store, shift)
     }
 
+    /**
+     * 個別ユーザーのシフト閲覧に必要な情報と権限を構築する。
+     */
     suspend fun forUserView(actorId: Long, targetUserId: Long): ShiftViewContext {
         val actor = requireUser(actorId, "actorId")
         val targetUser = requireUser(targetUserId, "userId")
@@ -106,6 +121,9 @@ class ShiftContextProvider(
         )
     }
 
+    /**
+     * 店舗単位のシフト閲覧に必要な情報と権限を構築する。
+     */
     suspend fun forStoreView(actorId: Long, storeId: Long): ShiftViewContext {
         val actor = requireUser(actorId, "actorId")
         val actorViewableStores = resolveViewableStoreData(actor)

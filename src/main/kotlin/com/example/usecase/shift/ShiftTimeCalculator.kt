@@ -23,6 +23,9 @@ import kotlinx.datetime.toLocalDateTime
  */
 object ShiftTimeCalculator {
 
+    /**
+     * 昼夜それぞれの稼働分数と合計を表す値オブジェクト。
+     */
     data class Minutes(
         val dayMinutes: Long,
         val nightMinutes: Long
@@ -30,9 +33,15 @@ object ShiftTimeCalculator {
         val totalMinutes: Long get() = dayMinutes + nightMinutes
     }
 
+    /**
+     * 単一シフトの昼夜分数を計算する。
+     */
     fun calculateMinutesForShift(shift: Shift, timeZone: TimeZone): Minutes =
         calculateMinutes(listOf(shift), timeZone)
 
+    /**
+     * 複数シフトの総勤務分数（昼／夜）を合算して返す。
+     */
     fun calculateMinutes(shifts: List<Shift>, timeZone: TimeZone): Minutes {
         var daySeconds = 0L
         var nightSeconds = 0L

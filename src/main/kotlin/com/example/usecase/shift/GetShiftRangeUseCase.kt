@@ -10,11 +10,17 @@ import com.example.domain.model.Shift
 import com.example.domain.repository.ShiftRepository
 import kotlinx.datetime.LocalDate
 
+/**
+ * 任意の期間でシフト一覧を取得するユースケース。
+ */
 class GetShiftRangeUseCase(
     private val repository: ShiftRepository,
     private val contextProvider: ShiftContextProvider,
     private val permissionService: ShiftPermissionService
 ) {
+    /**
+     * 開始日〜終了日の検証と権限チェックを行い、対象ユーザーのシフトを取得する。
+     */
     suspend operator fun invoke(actorId: Long, targetUserId: Long, startDate: LocalDate, endDate: LocalDate): List<Shift> {
         require(!startDate.isAfter(endDate)) { "startDate must be before or equal to endDate" }
         val context = contextProvider.forUserView(actorId, targetUserId)

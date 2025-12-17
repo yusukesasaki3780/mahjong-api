@@ -16,6 +16,9 @@ class GetGameSettingsUseCase(
     private val repository: GameSettingsRepository
 ) {
 
+    /**
+     * 指定ユーザーのゲーム設定を取得し、未設定なら null を返す。
+     */
     suspend operator fun invoke(userId: Long): GameSettings? =
         repository.getSettings(userId)
 }

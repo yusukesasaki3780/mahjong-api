@@ -15,17 +15,26 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
+/**
+ * 簡易入力バッチ開始時の前提チェックと初期レスポンス生成を行うユースケース。
+ */
 class StartSimpleBatchUseCase(
     private val storeMasterRepository: StoreMasterRepository,
     private val timeZone: TimeZone = TimeZone.currentSystemDefault()
 ) {
 
+    /**
+     * 簡単入力を開始する際に指定する店舗や日付などの情報。
+     */
     data class Command(
         val userId: Long,
         val storeId: Long,
         val playedAt: LocalDate?
     )
 
+    /**
+     * バッチ開始時にフロントへ返す UUID や店舗情報をまとめた結果。
+     */
     data class Result(
         val simpleBatchId: UUID,
         val storeId: Long,
@@ -33,6 +42,9 @@ class StartSimpleBatchUseCase(
         val playedAt: LocalDate
     )
 
+    /**
+     * 店舗存在を確認し、日付を補完して新しいバッチ ID を発行する。
+     */
     suspend operator fun invoke(command: Command): Result {
         val store = storeMasterRepository.findById(command.storeId)
             ?: throw DomainValidationException(

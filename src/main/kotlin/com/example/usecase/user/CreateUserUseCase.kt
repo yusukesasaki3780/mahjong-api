@@ -11,7 +11,7 @@ import com.example.usecase.settings.CreateDefaultGameSettingsUseCase
 import kotlinx.datetime.Clock
 
 /**
- * ユーザーと認証情報をまとめて登録するユースケース。
+ * ユーザー情報と認証情報をまとめて登録するユースケース。
  */
 class CreateUserUseCase(
     private val userRepository: UserRepository,
@@ -20,6 +20,9 @@ class CreateUserUseCase(
     private val createDefaultGameSettingsUseCase: CreateDefaultGameSettingsUseCase
 ) {
 
+    /**
+     * ユーザー登録に必要な入力情報をまとめたコマンド。
+     */
     data class Command(
         val name: String,
         val nickname: String,
@@ -31,6 +34,9 @@ class CreateUserUseCase(
         val passwordConfirm: String
     )
 
+    /**
+     * コマンドを検証し、ユーザー本体・資格情報・初期ゲーム設定を作成して返す。
+     */
     suspend operator fun invoke(command: Command): User {
         if (command.password != command.passwordConfirm) {
             throw DomainValidationException(
@@ -38,39 +44,37 @@ class CreateUserUseCase(
                     FieldError(
                         field = "passwordConfirm",
                         code = "PASSWORD_NOT_MATCH",
-                        message = "確認用パスワードが一致しません。"
+                        message = "確認用パスワードが一致しません"
                     )
                 ),
-                message = "確認用パスワードが一致しません。"
+                message = "Password confirm mismatch"
             )
         }
         command.validateFields()
         PasswordPolicy.validate(command.password)
 
-        val existing = userRepository.findByEmail(command.email)
-        if (existing != null) {
+        userRepository.findByEmail(command.email)?.let {
             throw DomainValidationException(
                 violations = listOf(
                     FieldError(
                         field = "email",
                         code = "EMAIL_ALREADY_EXISTS",
-                        message = "このメールアドレスは既に使用されています。"
+                        message = "同じメールアドレスが既に登録されています"
                     )
                 ),
-                message = "このメールアドレスは既に使用されています。"
+                message = "Email already registered"
             )
         }
-        val zooDuplicated = userRepository.findByZooId(command.zooId)
-        if (zooDuplicated != null) {
+        userRepository.findByZooId(command.zooId)?.let {
             throw DomainValidationException(
                 violations = listOf(
                     FieldError(
                         field = "zooId",
                         code = "ZOO_ID_ALREADY_EXISTS",
-                        message = "このZooIDは既に使用されています。"
+                        message = "同じ Zoo ID が既に登録されています"
                     )
                 ),
-                message = "このZooIDは既に使用されています。"
+                message = "ZooId already registered"
             )
         }
 

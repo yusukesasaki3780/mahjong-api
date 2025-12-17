@@ -10,11 +10,17 @@ import com.example.domain.repository.UserRepository
  * - 自身や他店舗のメンバーは削除できない。
  * - 実際の削除処理と監査記録は DeleteUserUseCase に委譲する。
  */
+/**
+ * 管理者が一般ユーザーを削除するユースケース。
+ */
 class AdminDeleteUserUseCase(
     private val userRepository: UserRepository,
     private val deleteUserUseCase: DeleteUserUseCase
 ) {
 
+    /**
+     * 自分自身や異なる店舗・管理者を対象外とし、条件を満たすユーザーを削除する。
+     */
     suspend operator fun invoke(
         adminId: Long,
         adminStoreId: Long,

@@ -9,12 +9,18 @@ import com.example.domain.repository.AdminPrivilegeGateway
 import com.example.domain.repository.UserRepository
 import kotlinx.datetime.Clock
 
+/**
+ * 管理者権限の付与・剥奪を行うユースケース。
+ */
 class AdminUpdateUserAdminFlagUseCase(
     private val userRepository: UserRepository,
     private val adminPrivilegeGateway: AdminPrivilegeGateway,
     private val clock: Clock = Clock.System
 ) {
 
+    /**
+     * 自分以外の同一店舗ユーザーについて管理者フラグを更新し、監査ログと通知を発行する。
+     */
     suspend operator fun invoke(
         adminId: Long,
         adminName: String?,

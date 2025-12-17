@@ -11,11 +11,17 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
+/**
+ * 店舗ごとの必要人数設定をバリデーション付きで登録・更新するユースケース。
+ */
 class UpsertShiftRequirementUseCase(
     private val shiftRequirementRepository: ShiftRequirementRepository,
     private val timeZone: TimeZone = TimeZone.currentSystemDefault()
 ) {
 
+    /**
+     * 必要人数の更新対象（店舗・日付・シフト種別など）を表すコマンド。
+     */
     data class Command(
         val actor: User,
         val storeId: Long,
@@ -25,6 +31,9 @@ class UpsertShiftRequirementUseCase(
         val endRequired: Int
     )
 
+    /**
+     * 管理者の権限と店舗整合性を確認したうえで必要人数を登録または更新する。
+     */
     suspend operator fun invoke(command: Command): ShiftRequirement {
         ensureAdmin(command.actor)
         ensureStore(command.actor, command.storeId)

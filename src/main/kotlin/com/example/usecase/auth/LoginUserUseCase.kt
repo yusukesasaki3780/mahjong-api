@@ -27,11 +27,23 @@ class LoginUserUseCase(
     private val refreshTokenTtlDays: Int = 30
 ) {
 
+    /**
+     * 認証情報が一致しない場合に投げる例外。
+     */
     class InvalidCredentialsException : RuntimeException("Invalid credentials")
+    /**
+     * 退会済みアカウントがログインしようとした場合に投げる例外。
+     */
     class DeletedAccountException : RuntimeException("Account deleted")
 
+    /**
+     * ログインに必要なメールアドレスとパスワードをまとめたコマンド。
+     */
     data class Command(val email: String, val password: String)
 
+    /**
+     * ログイン後に返すユーザー情報とトークンのセット。
+     */
     data class Result(
         val user: User,
         val token: String,
@@ -39,6 +51,9 @@ class LoginUserUseCase(
         val issuedAt: Instant
     )
 
+    /**
+     * 入力された資格情報を検証し、JWT とリフレッシュトークンを発行して結果を返す。
+     */
     suspend operator fun invoke(command: Command): Result {
         // 1. ユーザー情報と入力されたパスワードを検証する
         val user = userRepository.findByEmail(command.email)

@@ -9,6 +9,9 @@ import com.example.common.error.AccessDeniedException
  */
 class ShiftPermissionService {
 
+    /**
+     * シフト作成が許可されるユーザーかを検証し、違反時は例外を投げる。
+     */
     fun ensureCanCreate(context: ShiftCreateContext) {
         val actorId = context.actor.id ?: throw AccessDeniedException("アカウント情報を取得できません。")
         val targetId = context.targetUser.id ?: throw AccessDeniedException("対象ユーザー情報を取得できません。")
@@ -17,6 +20,9 @@ class ShiftPermissionService {
         }
     }
 
+    /**
+     * シフト更新権限を確認し、権限が無ければ例外を投げる。
+     */
     fun ensureCanUpdate(context: ShiftUpdateContext) {
         val actorId = context.actor.id ?: throw AccessDeniedException("アカウント情報を取得できません。")
         if (!context.actor.isAdmin && actorId != context.shift.userId) {
@@ -24,6 +30,9 @@ class ShiftPermissionService {
         }
     }
 
+    /**
+     * シフト削除権限を確認し、権限が無ければ例外を投げる。
+     */
     fun ensureCanDelete(context: ShiftDeleteContext) {
         val actorId = context.actor.id ?: throw AccessDeniedException("アカウント情報を取得できません。")
         if (!context.actor.isAdmin && actorId != context.shift.userId) {
@@ -31,6 +40,9 @@ class ShiftPermissionService {
         }
     }
 
+    /**
+     * 閲覧スコープに応じた権限チェックを行う。
+     */
     fun ensureCanView(context: ShiftViewContext) {
         when (context.scope) {
             ShiftViewContext.Scope.USER -> ensureUserView(context)

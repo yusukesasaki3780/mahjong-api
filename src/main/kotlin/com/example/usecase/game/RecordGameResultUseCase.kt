@@ -1,9 +1,9 @@
 package com.example.usecase.game
 
 /**
- * ### ‚±‚Ìƒtƒ@ƒCƒ‹‚Ì–ğŠ„
- * - ƒQ[ƒ€Œ‹‰Ê‚ğV‹K“o˜^‚·‚é‚Æ‚«‚Ì“ü—ÍŒŸØ‚ÆƒIƒuƒWƒFƒNƒg¶¬‚ğ‚Ü‚Æ‚ß‚½ƒ†[ƒXƒP[ƒX‚Å‚·B
- * - ƒoƒŠƒf[ƒVƒ‡ƒ“ƒ†[ƒeƒBƒŠƒeƒB‚ğg‚Á‚ÄƒhƒƒCƒ“ƒ‹[ƒ‹‚ğç‚è‚Â‚ÂARepository ‚Ö‚Ì•Û‘¶‚ğˆêŒ³‰»‚µ‚Ü‚·B
+ * ### ã“ã®ãƒ•ã‚¡ã‚¤ãƒ«ã®å½¹å‰²
+ * - ã‚²ãƒ¼ãƒ çµæœã‚’æ–°è¦ç™»éŒ²ã™ã‚‹ã¨ãã®å…¥åŠ›æ¤œè¨¼ã¨ã‚ªãƒ–ã‚¸ã‚§ã‚¯ãƒˆç”Ÿæˆã‚’ã¾ã¨ã‚ãŸãƒ¦ãƒ¼ã‚¹ã‚±ãƒ¼ã‚¹ã§ã™ã€‚
+ * - ãƒãƒªãƒ‡ãƒ¼ã‚·ãƒ§ãƒ³ãƒ¦ãƒ¼ãƒ†ã‚£ãƒªãƒ†ã‚£ã‚’ä½¿ã£ã¦ãƒ‰ãƒ¡ã‚¤ãƒ³ãƒ«ãƒ¼ãƒ«ã‚’å®ˆã‚Šã¤ã¤ã€Repository ã¸ã®ä¿å­˜ã‚’ä¸€å…ƒåŒ–ã—ã¾ã™ã€‚
  */
 
 import com.example.common.error.DomainValidationException
@@ -24,7 +24,7 @@ import org.valiktor.functions.isIn
 import org.valiktor.validate
 
 /**
- * V‚µ‚¢ƒQ[ƒ€Œ‹‰Ê‚ğ•Û‘¶‚·‚éƒ†[ƒXƒP[ƒXB
+ * æ–°ã—ã„ã‚²ãƒ¼ãƒ çµæœã‚’ä¿å­˜ã™ã‚‹ãƒ¦ãƒ¼ã‚¹ã‚±ãƒ¼ã‚¹ã€‚
  */
 class RecordGameResultUseCase(
     private val repository: GameResultRepository,
@@ -32,6 +32,9 @@ class RecordGameResultUseCase(
     private val timeZone: TimeZone = TimeZone.currentSystemDefault()
 ) {
 
+    /**
+     * ã‚²ãƒ¼ãƒ çµæœã®è¨˜éŒ²ã«å¿…è¦ãªå…¥åŠ›å€¤ã‚’ã¾ã¨ã‚ã‚‹ã‚³ãƒãƒ³ãƒ‰ã€‚
+     */
     data class Command(
         val userId: Long,
         val gameType: GameType,
@@ -47,6 +50,9 @@ class RecordGameResultUseCase(
         val simpleBatchId: UUID? = null
     )
 
+    /**
+     * ã‚³ãƒãƒ³ãƒ‰å†…å®¹ã‚’æ¤œè¨¼ã—ã€ã‚·ãƒ³ãƒ—ãƒ«ãƒ¢ãƒ¼ãƒ‰ã®è£œæ­£å¾Œã«ã‚²ãƒ¼ãƒ çµæœã‚’æ°¸ç¶šåŒ–ã™ã‚‹ã€‚
+     */
     suspend operator fun invoke(command: Command): GameResult {
         val settings = settingsRepository.resolveSettings(command.userId)
         val tipUnit = settings.tipUnit(command.gameType)

@@ -9,24 +9,36 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
+/**
+ * シフト作成・更新・削除時に対象ユーザーへ通知レコードを発行するサービス。
+ */
 class ShiftNotificationService(
     private val userRepository: UserRepository,
     private val notificationRepository: NotificationRepository,
     private val timeZone: TimeZone = TimeZone.currentSystemDefault()
 ) {
 
+    /**
+     * シフト新規登録を通知する。
+     */
     suspend fun notifyCreated(actorId: Long, targetUserId: Long, shift: Shift) {
         publish(actorId, targetUserId, shift, NotificationType.SHIFT_CREATED) { actorName, date ->
             "管理者 $actorName によって、あなたの${date}のシフトが登録されました。"
         }
     }
 
+    /**
+     * シフト更新を通知する。
+     */
     suspend fun notifyUpdated(actorId: Long, targetUserId: Long, shift: Shift) {
         publish(actorId, targetUserId, shift, NotificationType.SHIFT_UPDATED) { actorName, date ->
             "管理者 $actorName によって、あなたの${date}のシフトが変更されました。"
         }
     }
 
+    /**
+     * シフト削除を通知する。
+     */
     suspend fun notifyDeleted(actorId: Long, targetUserId: Long, shift: Shift) {
         publish(actorId, targetUserId, shift, NotificationType.SHIFT_DELETED) { actorName, date ->
             "管理者 $actorName によって、あなたの${date}のシフトが削除されました。"

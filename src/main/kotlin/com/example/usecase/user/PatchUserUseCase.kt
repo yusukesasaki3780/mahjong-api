@@ -16,12 +16,18 @@ import com.example.domain.repository.UserRepository
 import com.example.infrastructure.logging.AuditLogger
 import kotlinx.datetime.Clock
 
+/**
+ * ユーザー情報の一部項目のみを差分更新し、監査ログを残すユースケース。
+ */
 class PatchUserUseCase(
     private val userRepository: UserRepository,
     private val credentialRepository: UserCredentialRepository,
     private val auditLogger: AuditLogger
 ) {
 
+    /**
+     * ユーザー部分更新の入力項目を保持するコマンド。
+     */
     data class Command(
         val userId: Long,
         val name: String? = null,
@@ -33,6 +39,9 @@ class PatchUserUseCase(
         val newPassword: String? = null
     )
 
+    /**
+     * 指定された差分を検証して反映し、更新前後を監査ログに記録する。
+     */
     suspend operator fun invoke(command: Command, auditContext: AuditContext): User {
         command.validateFields()
 

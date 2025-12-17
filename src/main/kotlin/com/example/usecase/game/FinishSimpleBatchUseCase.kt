@@ -9,15 +9,16 @@ import java.util.UUID
 import kotlinx.datetime.Clock
 
 /**
- * ### このファイルの役割
- * - まとめて簡単入力モードの終了時に、最終収支レコードを確定させます。
- * - simpleBatchId に紐づく最後のレコードを取り出し、最終収支専用フラグを付けた上で値を書き換えます。
+ * 簡易入力バッチの終了時に最終収支レコードを確定させるユースケース。
  */
 class FinishSimpleBatchUseCase(
     private val repository: GameResultRepository,
     private val settingsRepository: GameSettingsRepository
 ) {
 
+    /**
+     * バッチ終了時に必要なユーザー・バッチ ID と最終金額をまとめるコマンド。
+     */
     data class Command(
         val userId: Long,
         val simpleBatchId: UUID,
@@ -25,6 +26,9 @@ class FinishSimpleBatchUseCase(
         val finalTotalIncome: Long
     )
 
+    /**
+     * バッチの最新行を取得して最終収支フラグと金額を確定させる。
+     */
     suspend operator fun invoke(command: Command): GameResult {
         val latest = repository.findLatestBySimpleBatch(command.userId, command.simpleBatchId)
             ?: throw DomainValidationException(

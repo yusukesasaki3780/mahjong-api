@@ -27,6 +27,9 @@ class CalculateMonthlySalaryUseCase(
     private val timeZone: TimeZone = TimeZone.currentSystemDefault()
 ) {
 
+    /**
+     * 月次給与計算で得られた各種サマリーを保持する結果 DTO。
+     */
     data class Result(
         val userId: Long,
         val yearMonth: YearMonth,
@@ -47,6 +50,9 @@ class CalculateMonthlySalaryUseCase(
         val netSalary: Double
     )
 
+    /**
+     * 特別手当 1 種類分の時間・単価・金額をまとめた情報。
+     */
     data class SpecialAllowanceSummary(
         val type: String,
         val label: String,
@@ -57,6 +63,9 @@ class CalculateMonthlySalaryUseCase(
         val specialHourlyWageId: Long? = null
     )
 
+    /**
+     * 指定ユーザー・月の勤務情報や設定を集計し、給与内訳と手取り額を計算する。
+     */
     suspend operator fun invoke(userId: Long, yearMonth: YearMonth): Result {
         val settings = settingsRepository.getSettings(userId)
             ?: throw IllegalStateException("Game settings not found for user $userId")

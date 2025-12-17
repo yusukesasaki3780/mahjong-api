@@ -5,9 +5,8 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
 /**
- * Utility to evaluate shift time overlaps in a day-aware manner.
- * It normalizes each shift's local start/end times into a monotonic timeline
- * (adding 24 hours to the end when crossing midnight) and checks for intersections.
+ * シフトの時間帯が重なっているかを日付またぎも考慮して判定するユーティリティ。
+ * ローカル時刻を日内ナノ秒に正規化し、日付を跨ぐ場合は 24 時間分を加算して比較する。
  */
 object ShiftOverlapChecker {
 
@@ -16,6 +15,9 @@ object ShiftOverlapChecker {
     private const val SECONDS_PER_DAY = 24 * 60 * 60
     private const val NANOS_PER_DAY = SECONDS_PER_DAY * NANOS_PER_SECOND
 
+    /**
+     * 2 つのシフト時間が交差しているかを判定する。
+     */
     fun overlaps(
         aStart: Instant,
         aEnd: Instant,

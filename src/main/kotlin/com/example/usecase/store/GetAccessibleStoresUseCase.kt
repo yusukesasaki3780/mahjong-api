@@ -7,12 +7,18 @@ import com.example.domain.repository.ShiftRepository
 import com.example.domain.repository.StoreMasterRepository
 import com.example.domain.repository.UserRepository
 
+/**
+ * ユーザーがアクセスできる店舗一覧を取得するユースケース。
+ */
 class GetAccessibleStoresUseCase(
     private val userRepository: UserRepository,
     private val storeRepository: StoreMasterRepository,
     private val shiftRepository: ShiftRepository
 ) {
 
+    /**
+     * 管理者なら全店舗、一般ユーザーなら所属店舗＋勤務実績のある店舗だけを返す。
+     */
     suspend operator fun invoke(actorId: Long): List<StoreMaster> {
         val actor = userRepository.findById(actorId) ?: throw DomainValidationException(
             violations = listOf(
